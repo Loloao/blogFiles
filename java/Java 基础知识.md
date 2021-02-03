@@ -111,3 +111,60 @@
   4. 如果没有编写任何构造方法，那么编译器就会默认赠送一个构造方法，没有参数、方法什么事都不做
   5. 一旦编写了至少一个构造方法，编译器就不再赠送
   6. 构造方法也可以重载
+- 导包
+   - `import 包路径.类名称`
+   - 如果需要使用的目标类和当前类在同一个包下，则可以省略导包语句不写
+   - 只有`java.lang`包下的内容不需要导包，其他的包都需要
+- 匿名对象就是只有右边的`new`对象，而没有左边的赋值语句。匿名对象只能使用一次
+
+## ArrayList
+
+- 可以装载一个泛型，泛型只能是引用类型，而不能是基本类型。从`JDK1.7+`开始，尖括号可以不写内容，但是尖括号不能省略。但是左边的赋值语句必须写
+- 如果想向集合中存储基本类型数据，必须使用基本类型的包装类，包装类都位于`java.lang`包下
+- 从`JDK1.5+`开始，支持自动装箱（基本类型-->引用类型），自动拆箱（引用类型-->基本类型）
+- 对于`ArrayList`来说，直接打印的不是地址值，而是内容，如果内容为空，则为`[]`
+- `public boolean add(E e)`向集合中添加元素，参数的类型和泛型一致。返回值表示添加动作是否成功。对于`ArrayList`来说，`add`操作一定是成功的，对于其他集合不一定是成功的
+- `public E get(int index)`向集合中获取元素，参数是索引值，返回值就是对应位置的元素
+- `public E remove(int index)`删除元素
+- `public int size()`获取集合的尺寸长度
+
+## String
+- Java 中的所有字面量值都作为`String`类的实例实现
+- 字符串的特点
+  1. 字符串是常量，创建之后不能更改
+  2. 字符串是可以共享使用的
+  3. 字符串效果上是`char[]`字符数组，但底层原理是`byte[]`字节数组
+- 创建字符串的 3 + 1 种方式
+  1. `public String()`创建一个空白字符串，不包含任何内容
+  2. `public String(char[] array)`根据字符数组来创建字符串，但底层依然会转换成`byte[]`进行保存
+  3. `public String(byte[] array)`根据字节数组来创建字符串
+  4. 直接用双引号创建
+- `String`的常量池，程序中直接写上的双引号字符串，就在字符串常量池中。字符串常量池是在堆当中的，其中保存的就是字符串字节数组的地址值。直接创建的字符串会在常量池中重复利用同一个地址值
+  ```java
+  String str1 = 'abc';
+  String str2 = 'abc';
+
+  char[] charArray = char[] {"a", "b", "c"};
+  String str3 = new String(charArray);
+
+  System.out.println(str1 == str2); // true
+  System.out.println(str1 == str3); // false
+  System.out.println(str2 == str3); // false
+  ```
+- 字符串的比较相关方法
+  1. `public boolean equals(Object obj)`参数可以是任何对象，只有参数是一个字符串且内容相同才会给`true`，不管创建方法是什么。如果比较常量和变量，推荐把常量写在前面，避免变量为`null`
+  2. `public boolean equalsIgnoreCase(String str)`忽略大小写进行内容比较
+- 字符串获取的相关方法
+  1. `public int length()`获取字符串当中含有的字符个数
+  2. `public String concat(String str)`将当前字符串和参数字符串拼接成为返回值新的字符串
+  3. `public char charAt(int index)`获取指定位置的单个字符
+  4. `public int indexOf(String str)`查找参数字符串在本字符串首次出现的索引位置
+- 字符串的截取方法
+  1. `public String substring(int index)`截取从参数位置一直到字符串尾，返回新字符串
+  2. `public String substring(int begin, int end)`截取从`begin`到`end`位置中间的字符串，`[begin, end)`也就是包含左边，不包含右边
+- 字符串的转换方法
+  1. `public char[] toCharArray()`将当前字符串拆分成为字符数组作为返回值
+  2. `public byte[] getBytes()`获取当前字符串的底层字节数据
+  3. `public String replace(CharSequence oldString, CharSequence newString)`将所有出现的老字符串替换为老字符串，返回新字符串。`CharSequence`是一个接口，表示接受字符串类型
+- 字符串的分割方法
+  1. `public String[] split(String regex)`按照参数规则将字符串切割成为若干部分，注意参数是一个正则表达式
