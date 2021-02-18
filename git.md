@@ -37,9 +37,12 @@ git 的大部分操作都是仅仅把数据推送到数据库
 
 ### `git add <files>`
 用于`tracking`文件，接收一个路径，如果是文件夹，会递归`add`文件夹中的内容
+- `-i | --interactive`可用来交互式地 stage 内容
+- `-p | --patch`可用来 stage 文件中的特定行
 
 ### `git reset HEAD <file>`
 将文件从`staging area`移除，`git status`可以提示
+- `--patch`用于回退部分文件
 
 ### `git checkout`
 - `-- <file>`用于将文件从更改状态变为未更改状态，`git status`可以提示，这个命令很危险，它会把文件还原为上一次 commit 的状态
@@ -47,6 +50,7 @@ git 的大部分操作都是仅仅把数据推送到数据库
 - `-b <newbranchname>`用于创建一个分支并切换到新分支
 - `-b <newbranchname> <remote>/<branchname>`用于将远程分支拉到本地
 - `-track <remote>/<branchname>`和上面的命令作用相同，但是不能自己定义分支名，分支名自动为`branchname`
+- `--patch`切换`checkout`部分文件
 
 ### `git switch`
 从 git 2.23 开始用于代替`git checkout`切换分支
@@ -113,6 +117,7 @@ git add README
 - `git log <branchname>`可以展示对应分支的 commit 信息
 - `--all`可展示所有分支的 commit 信息
 - `--decorate`可以显示当前指针指向哪个分支指针
+- `--abbrev-commit`可以使展示的 commit 的 SHA-1 值只有 7 位
 很多命令可以限制 log 输出
 - `--since | --until`可以限制某个时间段的 commit 展示，比如`--since=2.weeks`
 - `--author`用于展示每个 commit 作者的 commit
@@ -267,4 +272,82 @@ $ git merge <特性分支>
   在这种分支中你的更改能保存很久，而且它会让你在 code review 时更直观方便。
 具体详情见[这里](https://git-scm.com/book/en/v2/ch00/ch05-distributed-git)
 
+## Git Tools
+有些 git 工具可能你每天不会用，但在一些情况下自有它的用法
+
+### 修订版本`Revision Selection`
+git 允许你有特定的一种或几种方法来指定特定的或一定范围内的提交
+- `Single Revision`你可以使用给出的 SHA-1 值来指明一次提交，不过也有更简单的方法来指明。
+- `Short SHA-1`git 可以通过你提供的前几个字符来识别你想要的那次提交，只要你提供的部分 SHA-1 值不少于四个字符
+- `Branch Refrence`指明一次提交的最直接的方法要求有一个指向它的分支引用。这样，你就可以在任何需要一个提交对象或是 SHA-1 值的 git 命令中使用该名称了，比如你想显示一个分支最后一次提交的 commit 对象，可以：
+`git show <branchname>`
+- `rev-parse`可以看出分支指向哪个 SHA-1
+- `git reflog`可以用来看本地的引用日志，如果想看 HEAD 在前五次的值，可以使用`git show HEAD@{5}`或是查看`master`分支昨天在哪，可以使用`git show master@{yesterday}`
+- `Ancestry References`还有其他朱洋达方法去指明某次提交是通过它的祖先，如果你在引用最后加上一个`^`，则 Git 将其理解为此次提交的父提交
+`git show HEAD^`可在最后加个数字，用于看第几个父祖先，这种语法只在合并提交时有用，因为合并提交可能有多个父提交，第一父提交是你合并时所在的分支，第二父提交是你所合并的分支
+`git show HEAD~`如果不加数字和`git show HEAD^`一样，但当加上数字比如`2`时，表示的是第一父提交的第一父提交
+- `Commit Ranges`用于指明一定范围的提交，比如可以看出这个分支上有哪些分支没有合并到主分支
+`git log <branchname1>..<branchname2>`中的`..`可让 git 区分出可从`branchname2`分支中获得而不能从`branchname1`分支中获得提交，这个语法的常见用途是查看你将吧什么推送到远程
+`$ git log origin/master..HEAD`此命令可以省略`HEAD`
+还可以使用`^`或是`--not`选项来指明你不希望包含的分支，以下三个命令等价
+```shell
+$ git log refA..refB
+$ git log ^refA refB
+$ git log refB --not refA
+```
+`$ git log master...experiment`中的`...`这个可以指定被两个引用中的一个包含但又不被两者同时包含的分支
+
+### 交互式暂存`Interactive Staging`
+Git提供了很多脚本来辅助某些命令行任务。这里，你将看到一些交互式命令，它们帮助你方便地构建只包含特定组合和部分文件的提交。
+`git add -i | --interactive`可输入交互式的命令来进行交互，此时会出现以下内容
+```shell
+$ git add -i
+           staged     unstaged path
+  1:    unchanged        +0/-1 TODO
+  2:    unchanged        +1/-1 index.html
+  3:    unchanged        +5/-1 lib/simplegit.rb
+
+*** Commands ***
+  1: [s]tatus     2: [u]pdate      3: [r]evert     4: [a]dd untracked
+  5: [p]atch      6: [d]iff        7: [q]uit       8: [h]elp
+What now>
+```
+- `2 | u`可选择哪个文件进行`stage`
+- `3 | r`可对已暂存文件进行`unstage`
+- `6 | d`可查看已缓存文件的 diff，类似于`git diff --cached`
+- `5 | p`可缓存对印文件的特定行
+
+### `Stashing and Cleaning`
+当你在当前分支有很多杂乱的工作，但此时却需要切换到其他分支工作，问题是，你不希望 commit 当前进行了一半的工作，此时，可以使用`git stash`
+> 在 2017 年十月份之后，最好用`git stash push`代替原来的`git stash save`
+- `git stash`会将当前的更改储存到一个栈中，使用
+- `git stash list`可查看你储存的`stashs`，此时会展示
+```shell
+$ git stash list
+stash@{0}: WIP on master: 049d078 Create index file
+stash@{1}: WIP on master: c264051 Revert "Add file_size"
+stash@{2}: WIP on master: 21d80a5 Add number to log
+```
+此时可以应用一个 stash 使用
+- `git stash apply <stashname>`如果没有指定`stashname`则会应用于上一个 stash
+你可以在其中一个分支上进行 stash，随后切换到另外一个分支，再重新应用。在工作目录里包含已修改和未提交的文件时，你也可以应用 stash，如果有任何冲突则 stash 不会被应用
+- `git stash apply --index`可以重新应用被暂存的变更，因为未暂存的更改会恢复，但暂存的文件却不会被再次被暂存
+- `git stash drop <stashname>`
+- `git stash pop`可将 stash 立即应用之后删除
+- `git stash show -p <stashname> | git apply -R`当你应用了 stash 之后，进行了一些更改，又想取消之前的 stash，就可以使用这个命令，`stashname`未指定时，会指定为上一次 stash
+可以为这个命令加一个别名`git config --global alias.stash-unapply 'git stash show -p <stashname> | git apply -R'`
+- `git stash branch <newBranchname>`当你在你 stash 后的地方做了更改，而你重新应用 stash 将引起冲突，此时可以使用这个命令将当前 commit 移动当新分支上并应用当前更改，如果成功会删除原来的 stash
+- `git clean`当你不想 stash 更改，只想丢弃当前更改时，可以使用这个命令，它会清除当前为`Untracked`的更改，但是注意这是*不可逆*的。可以使用`git stash --all`来代替
+- `git clean -n | --dry-run`可以查看如果运行`git clean`时会移除哪些文件
+- `git clean -n -x`直接使用`git clean`不会移除被 git ignore 的文件，而使用`-x`选项可将被 git ignore 的文件一并删除
+- `git clean -i`可进行交互式的删除操作
+
+## Signing Your Work
+如果你想你的项目的 commit 来自于一个可信的来源，Git 有一些方法让你登陆并使用 GPG 来验证工作
+首先你需要一个私人的 key
+- `$ gpg --list-keys`可以看到你的 key
+- `$ gpg --gen-key`可以生成 key，一旦你有一个私人的 key 去登陆，你就能配置 Git 使用`user.signingkey`去登陆
+- `$ git config --global user.signingkey <pubkey>`可用来配置 git 的私人登陆 key
+- `git tag -s <newtag>`将`-s`代替`-a`选项可以发现自己的 GPG 信息依附在 tag 上
+- `git tag -v <tagname>`可进行 gpg 验证
 
