@@ -342,7 +342,7 @@ stash@{2}: WIP on master: 21d80a5 Add number to log
 - `git clean -n -x`直接使用`git clean`不会移除被 git ignore 的文件，而使用`-x`选项可将被 git ignore 的文件一并删除
 - `git clean -i`可进行交互式的删除操作
 
-## Signing Your Work
+### Signing Your Work
 如果你想你的项目的 commit 来自于一个可信的来源，Git 有一些方法让你登陆并使用 GPG 来验证工作
 首先你需要一个私人的 key
 - `$ gpg --list-keys`可以看到你的 key
@@ -350,4 +350,28 @@ stash@{2}: WIP on master: 21d80a5 Add number to log
 - `$ git config --global user.signingkey <pubkey>`可用来配置 git 的私人登陆 key
 - `git tag -s <newtag>`将`-s`代替`-a`选项可以发现自己的 GPG 信息依附在 tag 上
 - `git tag -v <tagname>`可进行 gpg 验证
+- `git commit -S`可进行 gpg 验证
+- `git log --show-signatrue`可展示当前的验证信息
+- `git log --pretty="format:%h %G? %aN  %s"`中的`%G`也能展示验证信息
+如果想要使用这种登陆验证，就需要你团队的每个人知道如何进行操作
+
+### Git Tools - Searching
+无论多大的代码量，都需要查看函数的调用或定义，或者方法的历史。git 提供了一些工具来查找这些信息
+- `git grep`允许你在工作目录中简单地进行查找
+- `-n | --line-number`可打印出匹配项的行数
+- `--count`打印出那些文件包含匹配项
+- `-p | --show-function`展示匹配的方法或是函数
+- `--and`哪行能够匹配多个匹配条件
+- `git log -S <searchString>`可用于展示含有匹配项的 commit
+- `-G`可使用正则进行匹配
+- `-L`可展示函数调用历史和它的行数，它也可接收一个正则
+
+### Rewriting History
+在将你的工作分享给其他人前，你能在任意时刻修订你的 commit
+> 请在你很满意你的工作之后再将它推送到远程仓库
+- `git commit --amend`将会打开一个`edit session`中并在其中修改`commit message`，另外注意它和上一个 commit 的 SHA-1 值不同，就像一个小的 rebase，不要 amend 一个已经 push 的 commit
+  `git commit --amend --no-edit`可以在不改变`commit message`的情况下更改 commit
+> `git commit --amend`更改的不仅是`commit message`同时还有 commit 的内容
+虽然 git 没有工具改变`commit history`，但是你能使用
+`git rebase -i`互动式地使用`git rebase`
 
