@@ -373,5 +373,83 @@ stash@{2}: WIP on master: 21d80a5 Add number to log
   `git commit --amend --no-edit`可以在不改变`commit message`的情况下更改 commit
 > `git commit --amend`更改的不仅是`commit message`同时还有 commit 的内容
 虽然 git 没有工具改变`commit history`，但是你能使用
-`git rebase -i`互动式地使用`git rebase`
+`git rebase -i`互动式地使用`git rebase`，它会打开一个编辑器，你需要在其中编辑`rebase script`
+  - `e | edit`可编辑对应的 commit
+    ```shell
+    # 将 pick 改为 edit
+    edit f7f3f6d Change my name a bit
+    pick 310154e Update README formatting and add blame
+    pick a5f4a0d Add cat-file
+    ```
+    保存之后 git 会将对应的 commit 作为最后一个 commit 此时使用
+    `git comit --amend`
+    更改 commit 之后退出，再使用
+    `git rebase --continue`后，后面的 commit 会自动加入到分支中
+  - 可以直接在`rebase script`中改变 commit 顺序
+  - `s | squash`可以将几个 commit 合并为一个
+    ```shell
+    pick f7f3f6d Change my name a bit
+    squash 310154e Update README formatting and add blame
+    squash a5f4a0d Add cat-file
+    ```
+    保存并退出之后，git 会打开一个编辑器用于编辑合并 commit 的 message
+  - 可将一个 commit 分开，在`rebase script`中将需要分开的 commit 的`pick`改为`edit`，保存退出之后，`reset`这个 commit 再进行`add`，`commit`等一系列操作
+  ```shell
+  $ git reset HEAD^
+  $ git add README
+  $ git commit -m 'Update README formatting'
+  $ git add lib/simplegit.rb
+  $ git commit -m 'Add blame'
+  $ git rebase --continue
+  ```
+  - `d | drop`用于删除一个 commit，但这样会使在之后的 commit 都被重写，可能会有很多冲突，使用`git rebase --abort`可以恢复到删除 commit 操作之前的状态
+`filter-branch`相当于一个核弹选项，它可以改变你全局的 email 地址或者从所有 commit 中移除一个文件，所以最好在这个项目没有`public`之前使用它。
 
+## Reset Demystified
+Git 作为一个系统管理器，在它的平常操作中控制三个`tree`
+`HEAD`: 上一个 commit 的快照，下一个 commit 的`parent`
+`Index`: 推断过的下一个 commit 快照
+`Working Diretory`: 沙箱`Sandbox`
+### HEAD
+`HEAD`可以简单地认为是在当前这个分支中最后一个 commit 的快照
+`git cat-file -p HEAD`用于展示快照
+`git ls-tree -r HEAD`可以展示文件夹以及 SHA-1
+
+### The Index
+指的就是`Staging Area`，也就是暂存区
+`git ls-files -s`用于展示暂存区文件内容
+
+### Working Directory
+其他两棵树通过麻烦但高效的方式保存在`.git`文件夹中。`working directory`能够解压它们到实际的文件中让你更方便地编辑它们。它就是一个沙盒`sandbox`让你在将它们放置在`staging area`之前更改它们
+
+### The Workflow
+切换分支或是克隆`cloning`都会经过同样的流程。当你`checkout`一个 branch，它会更改 HEAD 指针到新分支，将 branch 的数据植入。复制`Index`的内容到`working directory`中
+`git reset`会通过简单和可预见的方式操作这三棵树，它通过三个基本的操作
+1. `Move HEAD`首先`reset`将会将`HEAD`移动到指定的指针上，当你移动到前面的`HEAD`时，它会返回到对应的位置但不会改变`Index`或是`Working Directory`
+2. `Updating the Index(--mixed)`git 会使用`HEAD`指向的当前快照的内容来更新索引。它会撤销上一次提交，但还是会取消暂存所有东西
+3. `Updating work directory(--hard)`会使 Git 真正地销毁数据，任何形式的`reset`调用都可以轻松撤销，但是`--hard`不能，它会真正地销毁数据。`working directory`中的内容会和`HEAD`内容一致
+
+### `Checkout`
+和`reset`一样，`checkout`也操作三棵树，不过它们也有不同，它会更新所有三棵树使其看起来更像`[branch]`，但有两点重要区别
+- 不同于`reset --hard`，`checkout`对工作目录是安全的，它会通过检查确保不会将已更改的文件弄丢。它会简单的合并一下，更新所有未更改的文件
+- `reset`会移动`HEAD`分支的指向，而`checkout`只会移动`HEAD`自身来指向一个分支
+
+下面的图表列出了命令对树的影响
+```
+                           HEAD	Index	Workdir	WD Safe?
+Commit Level
+
+reset --soft [commit]       REF NO    NO      YES
+
+reset [commit]              REF YES   NO      YES
+
+reset --hard [commit]       REF YES   YES     NO
+
+checkout <commit>           HEADYES   YES     YES
+
+File Level
+
+reset [commit] <paths>      NO  YES   NO      YES
+
+checkout [commit] <paths>   NO  YES   YES     NO
+```
