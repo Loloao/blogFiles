@@ -453,3 +453,37 @@ reset [commit] <paths>      NO  YES   NO      YES
 
 checkout [commit] <paths>   NO  YES   YES     NO
 ```
+
+## Advanced Merging
+我们将介绍一些非标准类型的合并，以及如何回退到合并之前
+
+### Merge Conflicts
+对于一些复杂的合并冲突，Git 提供一些工具去帮助你即将会发生什么并且如何解决它
+首先，请确保你的`working directory`在做一些可能引起合并冲突的操作前是干净的。如果存在正在进行的工作，请先`commit`或是`stash`它。
+`git merge --abort`可将状态返回到未合并前的状态，但当使用命令前存在未`stage`或是`commit`的修改时不能完美处理
+`$ git merge -Xignore-space-change whitespace`会忽视由于空格引起的冲突
+如果我们想获得分支分叉前的共同祖先的分支版本，进行合并的分支1版本，进行合并的分支2版本，可以使用以下命令
+```shell
+$ git show :1:hello.rb > hello.common.rb
+$ git show :2:hello.rb > hello.ours.rb
+$ git show :3:hello.rb > hello.theirs.rb
+```
+`git diff --ours`可以看看我们分支合并引入了什么
+`git diff --theirs`可以看看另一个分支合并引入了什么
+`git diff --base`可以看看两边分支合并引入了什么
+`git checkout`命令也可以使用`--ours`或是`--theirs`选项用于直接引用某一边的提交
+### 组合式差异模式
+`git log --merge`可以显示任何一边接触了冲突文件的 commit
+因为 Git 暂存合并成功的结果，，当你在合并成功冲突状态下运行`git diff`时，只会得到现在还在冲突状态的区别
+当对一个合并提交运行`git show`时也会显示冲突信息，或者使用`git log -cc -p`
+### 撤销合并
+当合并提交出错时，你可以进行修复它们，这取决于你要的结果是什么
+如果这个错误的合并只存在于你的本地仓库中，最简单且方便的方法就是移动分支到你想要它指向的地方，如果使用的是`reset`，则在共享的仓库中并不好用，其他人的 commit 会覆盖你的修改
+`git revert -m 1 HEAD`会生成一个新提交的选项，提交将会撤销一个已存在提交的所有修改，这个新提交有两个父节点，分别为合并前两次提交的最后一次提交。`-m 1`表示`manline`哪个父节点
+如果还原之后再次合并，Git 只会引入被还原的合并之后的修改。所以需要撤销还原原始的合并，然后创建一个新合并提交
+### 其他合并
+目前为止我们都是通过一个叫`recursive`的合并策略来正常处理两个分支的正常合并，然后还有其他方式将两个分支合并在一起
+`git merge --Xours | --Xtheirs`可以在冲突合并时简单地选择一边进行合并
+`git merge -s ours <branchname>`可以假装合并过分支，但是合并后的结果会记录下来，这样在有一个分支需要分别在两条分支合并时非常有用，可以在一个分支上假装合并，这样就不会有冲突
+### 子树合并
+子树合并到思想是你有两个项目，并且其中一个映射到另一个项目的子目录，或者反过来也行。
