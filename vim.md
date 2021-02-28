@@ -11,6 +11,9 @@ vim 的许多命令都是都是由一个操作符和一个动作构成，比如�
 - `b`: `back`从当前光标到上一个单词的起始处
 - `$`: 从当前光标直到行末。
 text object：
+- `s`: 句子
+- `w`: 单词
+- `p`: 段落
 - `iw`: `inner word`当前单词内部
 - `it`: `inner tag`HTML 标签内的内容
 - `i"`: `inner quotes`quotes 周围的内容，比如`''`，`""`，`[]`
@@ -18,6 +21,7 @@ text object：
 - `as`: `a sentence`句子内
 - `ae`: `entire`当前文件所有内容
 - `ii`: `indent`相同缩进的内容
+
 操作符：
 - `d`: `Delete`删除
 - `c`: `Change`更改
@@ -42,8 +46,6 @@ custom operators，一些插件：
 - `insert`插入模式
 - `command`命令模式，比如`:wq`，`:q!`，`:vs`分屏，`sp(split)`，通过`:q`退出分屏模式
 - `visual`可视模式，一般用于块状选择文本，`V`选择行，`ctrl v`块状选择
-
-
 
 ## 文本操作
 
@@ -91,7 +93,6 @@ custom operators，一些插件：
 - `a`: `append`可以在当前位置后面添加文本内容，需要使用`esc`键退出
 - `A`: 可在当前行的最后加入内容
 - `I`: 在本行开头插入内容
-- 
 
 ### 撤销
 - `u`撤销最后执行的命令
@@ -112,20 +113,38 @@ custom operators，一些插件：
 - `S`把整行删除并进入插入模式
 - `C`删除整行并进入插入模式
 
-
 ### 打开
 - `o`可以在当前行下方打开新的一行，同时进入插入模式
 - `O`可以在当前行上方打开新的一行，同时进入插入模式
 
 ### 复制粘贴
+vim 的复制粘贴会在`normal`模式或是`insert`模式下有不同的行为
+vim 里操作的是寄存器而不是系统剪切板，`d`或是`y`复制的内容都放到了一个无名寄存器中，vim 使用多组寄存器
+- `"<register>`前缀可以指定寄存器，不指定默认使用无名寄存器，比如`"ayy`将当前行复制到`a`寄存器中
+- `:reg <register>`可查看寄存器中保存的内容
+除了有名寄存器`a - z`，vim 中还有一些其他常见寄存器
+- `"0`复制专用寄存器，使用`y`复制文本时会被拷到复制寄存器`0`
+- `"+"`复制到系统剪切板
+- `"%`当前文件名
+- `".`上次插入的文本
+- `:set clipboard=unnamed`可以直接复制粘贴系统剪切板内容
+`normal`模式
 - `y`用于复制文本，可输入`v`进入可视模式之后使用`y`进行复制，之后输入`p`进行粘贴
 - `yw`也是操作符可以加入`w`或是`e`之类的进行操作
+`insert`模式
+- `ctrl c | v`进行复制粘贴
 
 ### 插入模式命令
 - `ctrl h`删除上一个字符
 - `ctrl w`删除上一个单词
 - `ctrl u`删除当前行
 可以设置`ctrl c`或是`ctrl [`进行正常模式和插入模式的切换
+
+### 补全
+- `ctrl n`普通关键字
+- 当补全有列表时，使用`ctrl n | ctrl p`选择上一个或是下一个，`n: next`，`p: previous`
+- `ctrl x + ctrl f`文件名补全，会展示文件路径
+- `ctrl x + ctrl 0`全能补全，补全代码，需要加上插件
 
 ## 文件操作
 
@@ -192,9 +211,46 @@ custom operators，一些插件：
 每个窗口可以被无限分割
 `Tab`是可以容纳一系列窗口的容器
 
+## 其他命令
+- `:colorsheme`用于显示当前的主题配色，默认是`default`
+- `:colorsheme <ctrl + d>`显示所有配色
+- `:colorsheme <配色名>`修改配色
+[配色主题下载](https://github.com/flazz/vim-colorshemes)
+
+## 宏(macro)
+宏可以看成是一系列操作的集合，可以使用宏录制一系列操作，然后用于回放，宏的使用分为录制和回放
+- `q`来进行录制，同时也是`q`结束录制
+- `q<register>`选择想要保存的寄存器，把录制的命令保存其中
+- `@<register>`回放寄存器中保存的一系列命令
+- `:normal`可使用`normal`模式下命令
+- `: + ctrl p`可复制上一个命令
+
 ## 配置
 
-### 美化
+### 常见配置
+- `:h option-list`查找所有可配置项
+- `set number`设置行号
+- `colorsheme hybird`设置主题
+- `"`进行注释
+- `:w`保存`.vimrc`之后要通过`:source ~/.vimrc`让配置效
+
+### 映射
+vim 映射就是把一个操作映射到另一个操作
+- `:map <新操作符> <代替的操作符>`可以临时设置代替的映射
+- `:unmap <新操作符>`取消映射
+- `let mapleader = ","`用于设置`leader`键，常用的是`,`或是空格，比如`inoremap <leader>w <Esc>:w<cr>`在插入模式保存
+vim 的`normal/visual/insert`模式下都可以定义映射
+- `nmap | vmap | imap`定义映射只在`normal/visual/insert`模式下分别有效
+比如`:imap <c-d> <Esc>ddi`可以在插入模式下使用`ctrl d`删除一行
+递归映射就是`a`命令替换为`b`命令，再用`c`命令替换`b`命令，会发现`c`命令允许的是`a`命令的动作。`map`命令就有这个风险
+vim 提供了非递归映射，这些命令不会递归解释，比如
+`nnoremap/vnoremap/inoremap`其中`nore`表示`no recursive`非递归
+- *innoremap jj <Esc>`^*其中的*`^*表示的是回到插入模式编辑的地方
+- `cnoremap w!! w !sudo tee % >/dev/null`可以执行外部命令，此处是使用`w!!`进行使用`sudo`写入
+
+### 开源配置
+- [SpaceVim](https://github.com/SpaceVim/SpaceVim)
+- [vim-config](https://github.com/PegasusWang/vim-config)
 
 ### 在线帮助
 - 按下`HELP`键
@@ -207,6 +263,39 @@ custom operators，一些插件：
 
 ### 补全功能
 - `ctrl D`会显示匹配的命令列表，之后按`tab`键可补全命令，它对于`:help`命令非常有效
+
+## 插件
+Vim 插件是使用`vimscript`或是其他语言编写的 vim 功能扩展。
+在原来管理插件就是复制插件的代码，现在 vim 有很多插件管理器
+
+### vim-plug
+- 首先需要[下载](https://github.com/junegunn/vim-plug)
+- `Plug(<插件名>)`在`~/.vimrc`中增加该插件名称
+- 重新启动 vim 或是`:source ~/.vimrc`
+- `:PlugInstall`安装插件
+
+### 一些插件
+搜寻插件可以去[vimawesome](https://vimawesome.com/)
+- [vim-startify](https://github.com/mhinz/vim-startisfy)配置开屏画面
+- [vim-airline](https://github.com/vim-airline/vim-airline)美化状态栏
+- [indentline](https://github.com/yggdroot/indent-line)增加代码缩进线
+- [vim-hybird](https://github.com/w0ng/vim-hybird)配色
+- [solarized](https://github.com/altercation/vim-colors-solarized)配色
+- [gruvbox](https://github.com/morhetz/gruvbox)配色
+- [nerdtree](https://github.com/scrooloose/nerdtree)文件管理
+- [ctrlp](https://github.com/ctrlpvim/ctrlp.vim)用于快速查找并打开一个文件
+- [easymotion](https://github.com/easymotion/vim-easymotion)文件内快速移动插件
+- [vimsurround](https://github.com/tope/vim-surround)编辑包围的符号
+- [fzf](https://github.com/junegunn/fzf)模糊搜索
+- [deoplete.nvim](https://github.com/shougo/deoplete.nvim)异步补全代码插件，支持模糊匹配，需要安装对应组件的扩展
+- [coc.nvim](https://github.com/neoclide/coc.nvim)异步补全插件，支持 LSP
+- [Neoformat](https://github.com/sbdchd/neoformat)代码异步格式化，但需要安装对应语言的库，比如 js 的 prettier
+- [ale](https://github.com/w0rp/ale)lint 插件，需要对应的 eslnt 库，比如 eslint
+- [vim-commentary](https://github.com/tpope/vim-commentary)注释代码
+- [fugitive](https://github.com/tpope/vim-fugitive)在 vim 中使用 git
+- [vim-gitgutter](https://github.com/airblade/vim-gitgutter)修改文件之后显示文件的变动
+- [tig](https://github.com/junegunn/gv.vim)在命令行查看提交记录
+
 
 ## tips
 
