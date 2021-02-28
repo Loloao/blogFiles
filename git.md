@@ -487,3 +487,28 @@ $ git show :3:hello.rb > hello.theirs.rb
 `git merge -s ours <branchname>`可以假装合并过分支，但是合并后的结果会记录下来，这样在有一个分支需要分别在两条分支合并时非常有用，可以在一个分支上假装合并，这样就不会有冲突
 ### 子树合并
 子树合并到思想是你有两个项目，并且其中一个映射到另一个项目的子目录，或者反过来也行。
+### Rerere
+`reuse recorded resolution`如名字所述，它允许你让 Git 记住解决一个块冲突的方法，当下一次遇到相同冲突时，Git 可以为你自动解决它
+- `$ git config --global rerere.enabled true`启用功能
+### 子模块
+当你想要把它们当做两个独立的项目，同时又想在一个项目中使用另一个。
+### 打包
+可能你的网络中断了，你又希望将你的提交传输给你的同伴
+`git bundle`会将`git push`命令传输的内容打包成一个二进制文件，你可以将它传输给其他人，然后解包
+- `git bundle create <文件名> HEAD master`包含了所有重建该仓库`master`分支所需要的数据
+- `git clone <文件名>`就像从一个 url 上克隆一样
+如果你在打包时没有包含 HEAD 引用，你还需要在命令后指定一个`-b master`或是其他被引入的分支
+可以指出需要打包的 commit 区间，可以使用`origin/master..master`或是`master ^origin/master`来获取提交之后进行打包
+- `git bundle verify <文件路径>`可以验证是否是一个正常的可验证的包
+- `git bundle list-heads <文件路径>`可以查看包中可以导入哪些分支
+- `git fetch`或是`git pull`从包中导入提交`$ git fetch ../commits.bundle master:other-master`
+### 凭证存储
+如果你使用的是 SSH，可以不设置账号密码而使用没有口令的密钥来安全地传输数据，但对于 HTTP 这种方式是不可能的。
+但 git 有一个凭证系统来处理这个事情，下面有一些 Git 的选项
+- 默认所有都不缓存，每次链接都会询问账号和密码
+- `cache`会储存在内存中一段时间，15 分钟后清除
+- `store`会将凭证永久保存在磁盘中，永久有效
+- `osxkeychain`模式，如果是使用 mac，它会以加密方式存放在磁盘中
+通过 Git 的配置来选择上述的一种方式
+- `$ git config --global credential.helper cache`
+
