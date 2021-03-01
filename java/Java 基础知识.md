@@ -198,15 +198,25 @@
     1. 匿名内部类，在创建对象的时候，只能使用唯一一次。如果希望多次 new 的话，只能创建一个类
     2. 在使用匿名内部类创建了匿名对象的时候只能调用唯一一次
     3. 匿名内部类是省略了`实现类/子类名称`，但匿名对象是省略了`对象名称`
-
+### 包装类
+基本数据类型的数据使用起来方便但是没有对应的方法操作这些数据
+- 包装对象
+  - `Integer I = new Integer(1)`      
+  - `Integer I = Integer.valueOf(4)`
+- 拆箱
+  - `int num = i.intValue()`
+- 自动装箱和拆箱
+  - `Integer I = 1`
+  - `I = I + 1`
+除了`Character`类之外，所有包装类都会有`parseXxx`静态方法将字符串类型转换为对应的基本类型
 
 ## ArrayList
 
 - 可以装载一个泛型，泛型只能是引用类型，而不能是基本类型。从`JDK1.7+`开始，尖括号可以不写内容，但是尖括号不能省略。但是左边的赋值语句必须写
-- 如果想向集合中存储基本类型数据，必须使用基本类型的包装类，包装类都位于`java.lang`包下
+- 如果想向集合中存储基本类型数据，必须使用基本类型的包装类，包装类都位于`java.lang`包下，增删数组速度慢是因为每次增删都会创建一个新数组改变长度后复制原数组并进行增删
 - 从`JDK1.5+`开始，支持自动装箱（基本类型-->引用类型），自动拆箱（引用类型-->基本类型）
 - 对于`ArrayList`来说，直接打印的不是地址值，而是内容，如果内容为空，则为`[]`
-- `public boolean add(E e)`向集合中添加元素，参数的类型和泛型一致。返回值表示添加动作是否成功。对于`ArrayList`来说，`add`操作一定是成功的，对于其他集合不一定是成功的
+- `public boolean add(E e)`向集合中添加元素，参数的类型和泛型一致。返回值表示添加动作是否成功。对于`ArrayList`来说，`add`操作一定是成功的，对于其他集合不一定是成功的,
 - `public E get(int index)`向集合中获取元素，参数是索引值，返回值就是对应位置的元素
 - `public E remove(int index)`删除元素
 - `public int size()`获取集合的尺寸长度
@@ -290,4 +300,72 @@
 
 ## 常见类
 - `Objects`注意不是`Object`，它是一个工具类。当对象为 null 时候，调用`equals`方法会报错，所以可使用`Objects`的`equals`方法，会调用第一个参数的`equals`方法和第二个参数进行比较
-- 
+ 
+## 常见接口
+集合是 java 提供的一种容器，可以用来储存多种数据
+集合按照其存储结构可以分为两大类，分别是单列集合`java.util.collection`和双列集合`java.util.map`
+
+### Collection
+单列集合类的根接口，它有两个重要的子接口，分别是`java.util.List`和`java.util.Set`。其中，`List`的特点是元素有序、元素可重复。`Set`的特点是元素无序，且不可重复。`List`接口的主要实现类有`java.util.ArrayList`和`java.util.LinkedList`，`Set`接口的主要实现类有`java.util.HashSet`和`java.util.TreeSet`
+`Collection`就是所有单列集合中共用的方法
+- `ArrayList`底层是数组实现的，查询快，增删慢
+- `LinkedList`底层是链表实现的，查询慢，增删快
+- `HashSet`底层是哈希表 + 红黑树实现的，无索引、不可以存储重复元素、存储无序
+- `LinkedHashSet`底层是哈希表 + 链表实现的，无索引、不可以存储重复元素、可以保证存储顺序
+- `TreeSet`底层是二叉树实现，一般用于排序
+集合常用方法
+- `boolean add(E, e)`向集合中添加元素
+- `boolean remove(E, e)`删除集合中某个元素
+- `void clear()`清空所有元素
+- `boolean contains(E e)`判断集合中是否包含某个元素
+- `boolean isEmpty()`判断集合是否为空
+- `int size()`获取集合长度
+- `Object[] toArray()`转换为数组，转换完成后可使用 for 循环遍历
+- `Iterator<E> iterator()`返回在此 collection 元素上进行迭代的迭代器
+
+### List
+`List`接口继承`Collection`接口，它是一个有序的集合，此接口用户可对列表中每个元素的插入位置进行精确地控制，允许重复元素。操作索引时，一定要防止索引越界异常
+其实就是`ArrayList`，操作索引一定要防止索引越界异常
+- `public void add(int index, E element)将指定元素添加到指定位置
+- `public E get(int index)获取指定位置的元素
+- `public E remove(int index)移除指定位置元素
+- `public E set(int index, E element)用指定元素替换集合中指定位置元素，返回值的更新前元素
+
+### LinkedList
+`LinkedList`集合数据存储的是链表结构。方便元素添加删除的集合，它包含了大量操作首尾元素的方法。当使用`LinkedList`集合的特有方法时，不能使用多态
+- `public void addFirst(E e)`将指定元素插入到列表的开头
+- `public void addLast(E e)`将指定元素插入到列表的结尾
+- `public E getLast()`获取最后一个元素
+- `public E getFirst()`获取第一个元素
+- `public E removeLast()`移除最后一个元素并返回
+- `public E removeFirst()`移除第一个元素并返回
+- `public E pop()`等同于`removeLast()`
+- `public void push(E e)`将元素推入此列表所表示的堆栈
+- `public boolean isEmpty()`等同于`addLast()`
+
+### Vector
+同步的集合，它的大小可以鞥剧需要增大或缩小，以适应创建`Vector`后进行添加或移除项的操作，使用比较少
+
+### Iteration
+`Iteration`用于迭代访问(遍历)`Collection`中的元素，因此它也被称为迭代器
+迭代即在取元素之前判断集合中是否有元素，如果有，就把这个元素取出，继续进行判断，如此往复，直到把所有元素全部取出
+获取迭代器的实现类对象，并且会把指针(索引)指向集合的`-1`索引，取出下一个元素后，会把指针后移一位
+想要遍历`Collection`集合，那么就需要获取该集合迭代器来完成迭代操作
+- `public Iteration iterator()`获取集合对应的迭代器，用来遍历元素
+迭代器常用接口如下
+- `public E next()`返回迭代的下一个元素
+- `public boolean hasNext()`如果仍有元素可以迭代，返回 true
+迭代器使用步骤
+1. 使用集合中的`iteration`方法获取迭代器
+2. 使用`hasNext`方法判断是否还有下一个元素
+3. 会用`next`取出下一个元素，如果没有元素会抛出`NoSuchElementException`异常
+```java
+while(it.hasNext()) {
+  it.next();
+}
+```
+JDK1.5 之后有一个高级 for循环，专门用来遍历数组和集合。它的内部原理其实就是个`Iterator`迭代器，所以在遍历过程中，不能对集合进行增删操作
+```java
+for (元素的数据类型 变量：只能是 Collection集合 or 数组) { // do something }
+```
+
