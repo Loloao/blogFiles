@@ -300,7 +300,14 @@
 
 ## 常见类
 - `Objects`注意不是`Object`，它是一个工具类。当对象为 null 时候，调用`equals`方法会报错，所以可使用`Objects`的`equals`方法，会调用第一个参数的`equals`方法和第二个参数进行比较
- 
+
+### Collections
+它是集合工具类，用于对集合进行操作，部分方法如下
+- `public static <T> boolean addAll(Collections<T> c, T ... elements())`往集合中添加元素
+- `public static void shuffle(List<?> list)`打乱集合顺序
+- `public static <T> void sort(List<T> list)`将集合元素按默认顺序排序，但是注意被排序的集合里的元素必须实现`Comparable`，接口中的`compareTo`方法定义排序规则
+- `public static <T> void sort(List<T> list, Comparator<? super T>)`将集合中元素按指定规则排序
+
 ## 常见接口
 集合是 java 提供的一种容器，可以用来储存多种数据
 集合按照其存储结构可以分为两大类，分别是单列集合`java.util.collection`和双列集合`java.util.map`
@@ -322,6 +329,7 @@
 - `int size()`获取集合长度
 - `Object[] toArray()`转换为数组，转换完成后可使用 for 循环遍历
 - `Iterator<E> iterator()`返回在此 collection 元素上进行迭代的迭代器
+常用功能
 
 ### List
 `List`接口继承`Collection`接口，它是一个有序的集合，此接口用户可对列表中每个元素的插入位置进行精确地控制，允许重复元素。操作索引时，一定要防止索引越界异常
@@ -345,6 +353,29 @@
 
 ### Vector
 同步的集合，它的大小可以鞥剧需要增大或缩小，以适应创建`Vector`后进行添加或移除项的操作，使用比较少
+
+### Set
+`Set`接口继承自`Collection`接口，它不包含重复元素
+
+### HashSet
+此类继承`Set`接口
+1. 它由一个哈希表(一个 HashMap 实例)支持，查询速度非常快
+2. 它不保证`Set`的迭代顺序
+3. 是一个无序的集合，存储元素和取出元素的顺序可能不一致
+4. 没有索引，没有带索引的方法，不能使用简单的 for 循环遍历
+哈希值是一个十进制的整数，由系统随机给出，其实就是对象的地址值，但是一个逻辑地址，不是数据实际存储的地址
+- `int hashCode()`可以获取对象的哈希值，该方法底层调用的是本地操作系统的方法
+- `String`重写了`Object`的`HashCode`，如果字符串相同则它们的`HashCode`值会相等
+哈希表是`HashSet`集合存储数据的结构
+- jdk1.8 之前，哈希表 = 数组 + 链表，jdk1.8 之后，哈希表 = 数组 + 链表 或是 哈希表 = 数组 + 红黑树(当集合长度大于 8) ，就是速度快
+它存储数据到集合中，先计算元素的哈希值，如果哈希值相同则存储到同一个地方
+当两个元素不同但是哈希值相同，就称为哈希冲突
+`HashSet`如何避免元素重复
+在调用`add`方法时，会先调用元素的`hashCode`方法比较，如果出现哈希冲突就会调用`equals`方法比较，判断元素是否重复。但如果 hash 值相同会存到同一地址
+所以`HashSet`集合进行自定义元素存储时必须实现`hashCode`和`equals`方法
+
+### LinkedHashSet
+具有可预知迭代顺序的`Set`接口的哈希表和链接列表实现，底层是 哈希表 + 链表/红黑树 + 链表 多了一个链表用于记录元素存储顺序
 
 ### Iteration
 `Iteration`用于迭代访问(遍历)`Collection`中的元素，因此它也被称为迭代器
