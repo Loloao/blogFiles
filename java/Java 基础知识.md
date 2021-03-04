@@ -400,3 +400,36 @@ JDK1.5 之后有一个高级 for循环，专门用来遍历数组和集合。它
 for (元素的数据类型 变量：只能是 Collection集合 or 数组) { // do something }
 ```
 
+### Map
+`Map<K, V>`中`K`为此映射所维护的键类型，`V`为映射值的类型。它是将键映射到值的对象。一个映射不能包含重复的键；每个键最多只能映射到一个值
+`Map`集合保证`key`是唯一的，作为`key`的元素，必须冲洗`hashCode`方法和`equals`方法，以保证`key`唯一
+此接口完全取代`Dictionary`类，后者是一个抽象类
+常用方法
+- `public V put(K key, V value);`把指定的键和指定的值加入到`Map`集合中，`key`不重复的话，返回值是null，`key`重复的时候，会返回被替换的 value
+- `public V remove(Object key);`把指定的键所对应的键值对元素在`Map`集合中删除，返回被删除元素的值，`key`不存在，返回 null，存在返回删除的 value
+- `public V get(Object key);`根据指定的键，在 Map 集合中获取对应的值，`key`值操作如上
+- `boolean containskey(Object key);`判断集合中是否包含指定的键
+- `public Set<K> keySet();`获取 Map 集合中所有的键，存储到 Set 集合中，可通过这个方法来遍历`Set`之后找到对应键的值
+- `public Set<Map.Entry<k, v>> entrySet()`获取到 Map 集合中所有的键值对对象的集合，返回映射的`collection`视图，只能通过此视图的迭代器来实现
+在`Map`接口中有一个内部接口`Entry`，当`Map`集合一创建，那么就会在`Map`集合中创建一个`Entry`对象，用来记录键与值，它有两个方法
+- `getKey()`获取键
+- `getValue()`获取值
+
+### HashMap
+基于哈希表的`Map`接口的实现。此实现提供所有可选的映射操作，并允许使用`null`值和`null`键。它不保证映射的顺序
+它的特性和`HashSet`一致
+
+### LinkedHashMap
+基于哈希表和链表实现，具有可预知的迭代顺序。
+它的特性和`LinkedHashSet`一致
+
+### HashTable
+此类实现一个哈希表，此哈希表将键映射到相应的值。任何非 null 对象都可以作为键或值，但它是同步的，是一个线程安全的集合，速度慢
+`HashTable`和`Vector`集合一样，在 jdk1.2 之后被更先进的`HashMap`集合取代了，但它的子类`Properties`依然活跃在历史舞台，它是唯一一个和`IO`流相结合的集合
+
+### `of`方法
+`List`，`Set`和`Map`接口都增加了一个静态方法`of`，可以给集合一次性添加多个元素。使用前提是当集合中存储的元素的个数已经确定了，不在改变时使用
+注意
+1. `of`方法只适用于`List`接口，`Set`接口，`Map`接口，不适用于接口的实现类
+2. `of`方法的返回值是一个不能改变的集合，集合不能再使用`add`，`put`方法添加元素，会抛出异常
+3. `Map`和`Set`接口调用`of`方法的时候，参数不能有重复的元素
