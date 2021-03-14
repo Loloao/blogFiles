@@ -493,8 +493,46 @@ synchronized(同步锁) {
 这种方法的锁对象就是`this`
 静态同步方法的锁对象是本类的`class`属性 --> `class`文件对象(反射)
 ### Lock 锁
-`java.util.concurrent.locks.Lock`机制提供了比`synchronized`代码块和`synchronized`方法更广泛的锁定操作
+`java.util.concurrent.locks.Lock`接口提供了比`synchronized`代码块和`synchronized`方法更广泛的锁定操作
 `Lock`锁又称为同步锁，加锁与释放锁方法化了，如下:
 - `public void lock();`加同步锁
 - `public void unlock();`释放同步锁
-
+使用步骤
+- 在成员位置创建一个`ReentrantLock`对象
+- 在可能出现安全问题的代码前调用`Lock`接口中的方法`lock`获取锁
+- 在可能出现安全问题的代码前调用`Lock`接口中的方法`unlock`释放锁，可放在`finally`代码块中执行
+### 线程状态
+线程可处于下面几种状态之一
+- `NEW`新建状态，至今尚未启动的线程
+- `RUNNABLE`正在 Java 虚拟机中执行的线程处于这种状态
+- `BLOCKED`阻塞状态，受阻塞并等待某个监视器锁的线程处于这种状态
+- `WAITED`无限期等待另一个线程来执行某个特定操作的线程处于这种状态，等待 cpu 空闲时执行
+- `TIMED_WAITED`休眠状态，等待另一个线程取决于等待时间的操作的线程，cpu 空闲时也不执行
+- `TERMINATED`死亡状态，已退出线程，比如出现异常
+`Timed Waiting(计时等待)`一个正在限时等待另一个线程执行一个动作的线程处于这种状态，也就是`sleep`，也可以使用`wait`方法传入毫秒值
+`Object`类中的方法
+- `void wait()`在其他线程调用此对象的`notify()`方法或是`notifyAll()`方法前，导致当前线程等待
+- `void notify()`会唤醒在此对象监视器上等待的单个线程，会继续`wait()`之后的代码，如果有多个线程都在等待，随机唤醒一个
+- `void notiryAll()`唤醒所有等待线程
+### 线程通信
+多个线程并发执行时，在默认情况下CPU是随机切换线程的，当我们需要多个线程共同完成同一任务，并希望它们有规律执行，那么多线程之间就需要一些协调通信
+多个线程在处理同一个资源且任务不同时，需要线程通信来帮组解决线程之间对同一个变量的使用或操作，我们可以通过等待唤醒机制有效地利用资源
+其实就是利用`wait`方法和`notify`方法，就是一个经典的生产者与消费者问题
+### 线程池
+如果并发的线程数量很多，并且每个线程都是指向一个很短的任务就结束了，这样频繁地创建线程就会大大地降低系统的效率。此时我们可以让线程得以复用，在执行完一个任务之后不被销毁，继续执行其他任务
+线程池：容器为集合当程序第一次启动的时候，创建多个线程保存到集合中，当我们需要使用线程时，就从集合中取出线程来使用
+`Thread t = list.remove(0)`
+使用完毕时归还到线程池
+`Thread t = list.add(t)`
+在 JDK1.5 之后，JDK 内置了线程池，我们可以直接使用
+`java.util.concurrent.Executors`：线程池的工厂类，用来生成线程池
+`Executors`类中的静态方法：
+`static ExecutorService newFixedThreadPool(int nThreads)`创建一个可重用固定线程数的线程池，参数为创建线程池中的线程数量，返回值为`ExecutorService`接口，返回的是它的实现类对象，可以使用`ExecutorService`接口接收
+`java.util.concurrent.ExecurorService`线程池接口，用来从线程池中获取线程，调用`start`方法，执行线程任务
+- `submit(Runnable task)`提交一个`Runnable`任务用于执行
+- `void shutdown()`关闭/销毁线程池方法
+线程池使用步骤
+1. 使用线程池工厂类`Executors`里提供的静态方法`newFieldThreadPool`生产一个指定线程数量的线程池
+2. 创建一个类，实现`Runnable`方法，重写`run`方法，设置线程任务
+3. 调用`ExecutorService`中的方法`submit`传递线程任务(实现类)，开启线程，执行`run`方法
+4. 调用`ExecutorService`中的方法`shutdown`销毁线程池，但不建议执行
