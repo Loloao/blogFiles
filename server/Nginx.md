@@ -34,3 +34,44 @@ nginx 优势
 - `/usr/share/doc/nginx-1.12.0 | /usr/share/doc/nginx-1.12.0/COPYRIGHT | /usr/share/man/man8/nginx.8.gz`Nginx 的手册和帮助文件
 - `/var/cache/nginx`Nginx 的缓存目录
 - `/var/log/nginx`Nginx 的日志目录
+
+## 配置语法
+
+### 默认配置语法
+- `user`：设置 nginx 服务的系统使用用户
+- `worker_processes`：工作进程数，一般和 cpu 核心一致
+- `error_log`：nginx 的错误日志
+- `pid`：`nginx`服务启动时候`pid`
+- `events`：事件模块
+  - `worker_connections`：每个进程允许最大连接数
+  - `use`：设置 nginx 使用的内核模型
+- `http`: 包含所有 http 的服务
+  - `server`：配置虚拟或是独立的站点
+    - `listen`：监听的端口
+    - `server_name`：监听的 host
+    - `location`：控制每一层路径的访问
+      - 可以接一个路径，然后有一个模块
+    - `error_page`: 可以接状态码，之后再接页面
+    ```nginx
+    server {
+      listen 80;
+      server_name localhost;
+
+      location / {
+        root /usr/share/nginx/html;
+        // 如果在 root 路径下没有找到 index.html 回去找 index.htm
+        index index.html index.htm;
+      }
+
+      error_page 500 502 /50x.html;
+      location = /50x.html {
+        // 在这个路径下寻找对应的 html 文件
+        root /usr/share/nginx/html;
+      }
+    }
+    ```
+  - `include`：包含所有的`Content-Type`
+  - `default_type`：默认的`Content-Type`
+  - `log_format`：日志类型
+  - `keepalive_timeout <时间长度>`：客户端和服务端超时的时间
+  - `gzip`：打开`gzip`
