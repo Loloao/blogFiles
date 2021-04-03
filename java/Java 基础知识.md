@@ -536,3 +536,30 @@ synchronized(同步锁) {
 2. 创建一个类，实现`Runnable`方法，重写`run`方法，设置线程任务
 3. 调用`ExecutorService`中的方法`submit`传递线程任务(实现类)，开启线程，执行`run`方法
 4. 调用`ExecutorService`中的方法`shutdown`销毁线程池，但不建议执行
+
+## File 类
+`java.io.File`类，为文件和目录路径的抽象表现形式，把文件和文件夹封装成了一个`File`类
+- `static String pathSeparator`：与系统有关的路径分隔符，为了方便，它被表现为一个字符串。windows：分号，linux：冒号
+- `static char pathSeparator`：与系统有关的路径分隔符
+- `static String separator`：与系统有关的默认名称分隔符。windows：反斜杠，linux：正斜杠
+- `static char separator`：与系统有关的默认名称分隔符
+所以操作路径的时候不要写死了，应该使用上面的分隔符
+### 构造方法
+- `File(String path)`：路径可以是以文件或是以文件夹结尾，可以是相对路径也可以是绝对路径，路径可以存在也可以不存在
+- `File(String parent, String child)`：根据`parent`路径名字符串和`child`路径名字符串创建一个新的`File`实例，父路径是`File`类型，可以使`File`的方法对路径进行一些操作，再使用路径创建对象
+
+### 常用方法
+- `public String getAbsolutePath()`：返回此`File`的绝对路径
+- `public String getPath()`：将此`File`转换为路径名字符串
+- `public String getName()`：返回此`File`表示的文件或目录名称，也就是结尾
+- `public long length()`：返回此`File`表示的文件的长度，文件夹则返回`0`
+- `public boolean exist()`：此`File`表示的文件或目录是否实际存在
+- `public boolean isDirectory()`：此`File`表示的是否为目录
+- `public boolean isFile()`：此`File`表示的是否为文件
+- `public boolean createNewFile()`：当且仅当具有该名称的文件尚不存在时，创建一个空文件，当路径不存在时，必须处理`IOException`异常
+- `public boolean delete()`：删除此`File`表示的文件或目录，当文件夹中有内容，会返回`false`，删除是直接在硬盘删除
+- `public boolean mkdir()`：创建此`File`表示的目录，创建单级文件夹
+- `public boolean mkdirs()`：创建此`File`表示的目录，包括任何必需单不存在的目录，可创建单级或是多级文件夹
+- `public String[] list()`：返回一个String数组，表示该`File`目录中所有的子目录和文件，遍历的是构造方法给出的目录，如果路径不存在，会抛出空指针异常，获取的是目录名或是文件名
+- `public File[] listFiles()`：返回一个File数组，表示该`File`目录中所有的子目录和文件
+
