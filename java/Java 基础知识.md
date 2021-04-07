@@ -563,3 +563,25 @@ synchronized(同步锁) {
 - `public String[] list()`：返回一个String数组，表示该`File`目录中所有的子目录和文件，遍历的是构造方法给出的目录，如果路径不存在，会抛出空指针异常，获取的是目录名或是文件名
 - `public File[] listFiles()`：返回一个File数组，表示该`File`目录中所有的子目录和文件
 
+### 过滤器
+- `java.io.FileFilter`：此接口的实例用于抽象路径名的过滤器，此接口实例可传递给`File`类的`listFiles(FileFilter)`方法
+  - `boolean accept(File pathname)`：测试指定抽象路径名是否应该包含在某个路径名列表中
+- `java.io.FilenameFilter(File pathname)`：此接口的实例用于文件名的过滤
+  - `boolean accept(File dir, String name)`：此时指定文件是否应该包含在某一文件列表中
+
+## IO
+- `i(input)`：输入（读取）
+- `o(output)`：输出（写入）
+- `流`：数字，字符，字节，一个字符等于`2`个字节，一个字节等于`8`个二进制位
+  - `inputStream`：字节输入流
+  - `outputStream`：字节输出流
+  - `Reader`：字符输入流
+  - `Writer`：字符输出流
+- `java.io.outputStream`：此抽象类是表示字节输出类的所有类的超类，它定义了字符输出流的基本共性功能方法
+  - `public void close()`：关闭此输出流并释放与此流相关联的任何系统资源
+  - `public void flush()`：刷新此输出流并强制任何缓冲的输出字节被写出
+  - `public void write(byte[] b)`：将`b.length`字节从指定的字节数组写入此输出流
+  - `public void write(byte[] b, int off, int len)`：从指定的字节数组写入`len`字节，从偏移量`off`开始输出到此输出流
+  - `public abstract void write(int b)`：将指定的字节输出流
+  
+
