@@ -583,5 +583,70 @@ synchronized(同步锁) {
   - `public void write(byte[] b)`：将`b.length`字节从指定的字节数组写入此输出流
   - `public void write(byte[] b, int off, int len)`：从指定的字节数组写入`len`字节，从偏移量`off`开始输出到此输出流
   - `public abstract void write(int b)`：将指定的字节输出流
-  
+- `java.io.FileOutputStream`：文件字节输出流，把内存中的数据写入到硬盘的文件中
+  - `FileOutputStream(String name)`：创建一个向具有指定名称的文件中写入数据的输出文件流，目的是一个文件路径
+  - `FileOutputStream(File file)`：创建一个指定`File`对象表示的文件中写入数据的文件输出流，目的是一个文件
+  构造方法的作用
+  1. 创建一个`FileOutputStream`对象
+  2. 根据指定的文件路径或是文件创建一个空文件
+  3. 把`FileOutputStream`对象指向创建好的文件
+  写入数据的原理(内存 -> 硬盘)：java程序 --> JVM虚拟机--> 操作系统--> 把数据写到文件中
+  字节输出流的使用步骤
+  1. 创建一个`FileOutputStream`对象，构造方法中传递写入数据目的地
+  2. 调用`FileOutputStream`对象中的方法`write`，把数据写入到文件中
+  3. 释放资源(流会占用一定的资源，使用完需要清空内存，提高程序的效率)
+  ```java
+  FileOutputStream fos = new FileOutputStream('路径');
+  // 写数据的时候，会把十进制数97转为二进制整数97，如果通过记事本打开会查询编码表，把字节转换为字符表示
+  fos.write(97);
+  fos.close();
+  ```
+  如果写的第一个字节是正数`0 ~ 127`，那么显示的时候会查询`ASCII`表
+  如果写的第一个字节是负数，那么第一个字节会和第二个字节，两个字节组成一个中文显示，查询系统默认码表`GBK`
+  - `String.getBytes()`：可以将字符串转换为字节数组
+  - `public void write(byte[] b)`：将`b.length`字节从指定的字节数组写入输出表，这个和下个方法都是为了一次性写入多个字节
+  - `public void write(byte[] b, )`：从指定的字节数组写入`len`字节，从偏移量`off`开始输出到此输出流
+  - `FileOutputStream(String name, boolean append)`：在指定文件后进行追加写入，当`append`为`false`时，覆盖原文件，`true`时，追加写入
+  - `FileOutputStream(File file, boolean append)`：在指定文件后进行追加写入
+  换行符：写换行符号
+  - `windows`：`\r\n`
+  - `linux`：`\n`
+  - `mac`：`\r`
+- `java.io.InputStream`：表示字节输入流的所有类的超类，可以读取字节信息内存中
+  - `public void close()`：关闭此输入流并释放与此流相关联的任何系统资源
+  - `public abstract int read()`：从输入流读取数据的下一个字节，可以使用`while`循环进行读取
+  - `public int read(byte[] b)`：从输入流中读取一定数量的字节并将其存储到缓冲区数组`b`中
+  ```java
+  while((len = fis.read()!=-1) {
+    system.print((char)len;)
+  }
+  ```
+  - `public int read(byte[] b)`：从输入流中读取一些字节数，并将它们存储到字节数组`b`中，读取到文件末尾返回`-1`
+  ```java
+  byte[] bytes = new byte[2];
+  int len = fis.read(bytes);
+  // String 可将读取的数据流转换为字符串
+  System.out.println(new String(bytes));
 
+  // 读取有效字节
+  int len = 0
+  while(len! = -1) {
+    System.out.println(String(bytes, 0, len)); 
+  }
+  ```
+- `java.io.FileInputStream`：把硬盘中的文件，读取到内存中使用
+  - `FileInputStream(Stream name)`：文件路径
+  - `FileInputStream(File file)`：文件
+  字节输入流的使用步骤
+  1. 创建`FileInputStream`对象，构造方法中绑定要读取的数据源
+  2. 使用`FileInputStream`对象中的`read`方法，读取文件
+  3. 释放资源
+  - `String(byte[] bytes)`：可以把字节数组转换为字符串
+  - `String(byte[] bytes, int offset, int length)`：可以把字节数组的一部分转换为字符串
+
+## 字符流
+当字节流读取文本时，可能会有一些小问题，就是遇到中文字符时，可能不会显示完整的字符，那是因为一个中文字符可能会占用多个字节存储，所以 java 会提供字符流来专门处理文本文件
+- `java.io.Reader`：此抽象类专门用于读取字符流所有类的超类，可以读取字符信息到内存中，它定义了一些共性方法
+  - `public void close()`：关闭并释放与此流相关的系统资源
+  - `public int read()`：从输入流读取一个字符
+  - `public int read(char[] cbuf)`：从输入流中读取一些字符，并将它们存储到数组`cbuf`中
