@@ -650,3 +650,62 @@ synchronized(同步锁) {
   - `public void close()`：关闭并释放与此流相关的系统资源
   - `public int read()`：从输入流读取一个字符
   - `public int read(char[] cbuf)`：从输入流中读取一些字符，并将它们存储到数组`cbuf`中
+使用字节流读取中文文件，1个中文
+  - `GBK`：占用两个字节
+  - `UTF-8`：占用三个字节
+- `java.io.FileReader extends InputStreamWriter extends Reader`：文件字符输入流，把硬盘文件中的数据以字符的方式读取到内存中，创建一个`FileReader`对象，将它指向要读取的文件
+  - `FileReader(String fileName)`：接收一个路径
+  - `FileReader(File file)`：接受一个文件
+  - 和字节流类似，使用`String(char[] value)`和`String(char[] value, int offset, int count)`来转化为字符串
+- `java.io.FileWriter extends OutputStreamWriter extends Reader`：此抽象类是表示写出字符流的所有类的超类，将指定的字符写在目的地
+  - `void write(int c)`：写入单个字符
+  - `void write(char[] cbuf)`：写入字符数组
+  - `abstract void write(char[] cbuf, int off, int len)`：写入字符数组的某个部分
+  - `void write(String str)`：写入字符数组
+  - `void write(String str, int off, int len)`：写入字符串的某一部分
+  - `void flush()`：刷新该流的缓冲，流对象和以继续使用
+  - `void close()`：关闭此流，但要先刷新它。先刷新缓冲区，然后通知系统释放资源，流对象不可以再被使用了
+  字符输出流的使用步骤
+  1. 使用`FileWriter`对象，构造方法中绑定要写入数据的目的地
+  2. 使用`FileWriter`中的方法`write`，把数据写入到内存缓冲区中(字符转为字节过程)
+  3. 使用`FileWriter`中的方法`flush`，把内存缓冲区中的数据，刷新到文件中
+  4. 释放资源
+  - `FileWriter(String fileName, boolean append)`：与字节流类似，`true`续写，`false`覆盖
+  - `FileWriter(File file, boolean append)`：与字节流类似
+
+## IO 异常的处理
+在 JDK1.7 之前使用`try...catch...finally`处理流中的异常，`finally`中释放资源
+```java
+FileWriter fw = null
+try {
+  fw = new FileWriter("路径名");
+  for (int i = 0; i < 10; i++) {
+    fw.writer("hello");
+  }
+} catch(IOException e) {
+  System.out.println(e);
+} finally {
+  if (fw != null) {
+    try {
+      fw.close();
+    } catch(IOException e) {
+      e.printStackTrace();
+    }
+  }
+}
+```
+JDK 7的新特性，在`try`的后边可以增加一个括号`()`，在括号中可以定义流对象，那么这个流对象的作用域在`try`中有效，`try`中代码执行完毕，会自动把流对象释放，不用写`finally`
+```java
+try (
+  FileInputStream fis = new FileInputStream('c:jpg');
+  FileOutputStream fos = new FileOutputStream('c:jpg');
+) {
+  int len = 0;
+  while((len = fis.read()) != -1) {
+    fos.write(fos);
+  }
+} catch(IOException e) {
+  System.out.println(e);
+}
+```
+JDK 9 的新特性，可以在`try`之前定义流对象，之后在`try`中引用。但是会抛出`IOException`错误
