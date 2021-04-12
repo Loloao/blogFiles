@@ -709,3 +709,52 @@ try (
 }
 ```
 JDK 9 的新特性，可以在`try`之前定义流对象，之后在`try`中引用。但是会抛出`IOException`错误
+
+## Properties
+`Properties`类表示了一个持久地属性集。`Properties`可保存在流中或是从流中加载。属性列表中每个键及其对应值都是字符串
+- `java.util.properties extends HashTable<k, v> implements Map<k, v>`，它是唯一一个和 IO流结合的集合
+  - `void store(OutputStream out, String comments)`：字节输出流，不能写入中文，`comments`用于表示保存的文件是做什么用的，不能使用中文，默认是`unicode`编码，一般使用空字符串。此方法可以把集合中的临时数据持久化写入到硬盘中存储
+  - `void store(Writer writer, String comments)`：字符输出流，可以写入中文，此方法可以把集合中的临时数据持久化写入到硬盘中存储
+  使用步骤
+    1. 创建`Properties`集合对象，添加数据
+    2. 创建字节输出流/字符输出流对象，构造方法中绑定要输出的目的地
+    3. 使用`Properties`集合中的方法`store`
+    4. 释放资源
+  - `void load(InputStream inStream)`：可以把硬盘中保存的文件(键值对)读取到集合中使用，不能读取含有中文的键值对
+  - `void load(Reader reader)`：可以把硬盘中保存的文件(键值对)读取到集合中使用，可以读取中文
+  使用步骤
+    1. 创建`Properties`集合对象
+    2. 使用`Properties`集合对象中的方法`load`读取保存键值对的文件
+    3. 遍历`Properties`集合
+  注意
+    - 存储键值对的文件中，键值对默认的连接符号可以为`=`，`<space>`或是其他符号
+    - 可以使用`#`进行注释
+    - 键与值默认都是字符串
+  由于它的键和值都是字符串，所以它会有一些操作字符串的特有方法
+  - `Object setProperty(String key, String value)`：调用`Hashtable`的方法`put`
+  - `String setProperty(String key)`：用指定的键在此属性列表中搜索属性，此方法相当于`Map`集合中的`get(key)`方法
+  - `Set<String> stringPropertyNames()`：返回此属性列表中的键集，其中该键及其对应值是字符串，此方法相当于`Map`集合中的`keySet`方法
+
+## 缓冲流
+是在基本的流对象的基础之上创建而来的，能够转换编码的转换流，能够持久化存储对象的序列化流等等。如果不使用缓冲流，那么每次都是单个字节进行写入和读取都要经过 JVM、OS、硬盘这几个步骤来回传递数据，十分消耗资源。而字节缓冲输入流能给基本的字节输入流增加一个缓冲区(数组)，提高基本字节输入流的读取效率
+
+### 字节缓冲流
+- `java.io.BufferedOutputStream extends OutputStream`：可以使用`OutputStream`的基本方法
+  - `BufferedOutputStream(OutputStream out)`：创建一个新的缓冲输出流，以将数据写入指定的底层输入流
+  - `BufferedOutputStream(OutputStream out, int size)`：创建一个新的缓冲输出流，以将具有指定缓冲区大小的数据写入指定的底层输出，`size`用于限定大小，不传默认为默认值
+  使用步骤
+  1. 创建`FileOutputStream`对象，构造方法中绑定要输出的目的地
+  2. 创建`BufferedOutputStream`对象，构造方法中传递`FileOutputStream`对象，提高`FileOutputStream`对象效率
+  3. 创建`BufferedOutputStream`对象中的方法`write`，把数据写入到内部缓冲区中
+  4. 创建`BufferedOutputStream`对象中的方法`flush`，把内部缓冲区的数据刷新到文件中 
+  5. 释放资源，会调用第4步的方法刷新资源，所以第四步可以省略
+- `java.io.BufferedInputStream extends InputStream`：可以使用`InputStream`的基本方法
+  - `BufferedInputStream(InputStream in)`：创建一个新的缓冲输入流，以将数据写入指定的底层输入流
+  - `BufferedInputStream(InputStream in, int size)`：创建一个新的缓冲输入流，以将具有指定缓冲区大小的数据写入指定的底层输出，`size`用于限定大小，不传默认为默认值
+  使用步骤
+  1. 创建`FileInputStream`对象，构造方法中绑定要读取的数据源
+  2. 创建`BufferedInputStream`对象，构造方法中传递`FileInputStream`对象，提高`FileInputStream`对象效率
+  3. 使用`BufferedInputStream`对象中的方法`read`，读取文件
+  4. 读取资源
+- `java.io.BufferedWriter`和`java.io.BufferedReader`和字节流的用法基本相同，只不过可以直接处理中文，它可以使用`缓冲流.newLine()`来进行换行
+  - `String readLine()`：读取一个文本行。读取一行数据行的终止符号也就是`\n`或是`\r`或是`\r\n`直接跟着换行，返回该行的字符串不包含终止符号。如果结束则返回`null`可以用它来作为`while`的终止条件
