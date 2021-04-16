@@ -757,4 +757,73 @@ JDK 9 的新特性，可以在`try`之前定义流对象，之后在`try`中引�
   3. 使用`BufferedInputStream`对象中的方法`read`，读取文件
   4. 读取资源
 - `java.io.BufferedWriter`和`java.io.BufferedReader`和字节流的用法基本相同，只不过可以直接处理中文，它可以使用`缓冲流.newLine()`来进行换行
-  - `String readLine()`：读取一个文本行。读取一行数据行的终止符号也就是`\n`或是`\r`或是`\r\n`直接跟着换行，返回该行的字符串不包含终止符号。如果结束则返回`null`可以用它来作为`while`的终止条件
+  - `String readLine()`：读取一个文本行。读取一行数据行的终止符号也就是`\n`或是`\r`或是`\r\n`直接跟着换行，返回该行的字符串不包含终止符号。如果结束则返回`null`可以用它来作为`while`的终止条件`
+
+## 字节编码和字符集
+- 计算机中存储的信息是用二进制来表示的，我们在屏幕上看到的数字、英文、标点符号、汉字等字符是二进制数是转换后的结果。按照某种规则，将字符保存在计算机中，称为编码。反之，将二进制数按某种规则显示出来称为解码。
+  - 编码：字符 -> 字节
+  - 解码：字节 -> 字符
+  - 字符编码`charater Encoding`：就是一套自然语言的字符与二进制数之间的对应规则
+  - 编码表：对应规则，是一个系统支持的所有字符的集合，常见的有`ASCII`、`GBK`、`unicode(utf-8)`等
+### 字符集
+- `ASCII`：是基于拉丁字母的一套电脑编码系统，用于显示现代英语。基本的`ASCII`字符集，使用`7bits`表示一个字符，共128字符，扩展字符集使用`8bits`表示一个字符，共256字符
+- `ISO-8859-1`：拉丁码表，用于显示欧洲使用的语言，使用单字节编码，兼容`ASCII`
+- `GBxxx`：`GB`就是国标的意思，为了显示中文而设计的一套字符集
+  - `GB2312`：简体中文码表，一个小于127的字符和原来相同。但两个大于127的字符连在一起时就表示一个汉字，两个字节长的字符叫`全角`字符，而一个字节长的字符叫`半角`字符
+  - `GBK`：最常用的中文码表，是在`GB2312`基础上扩展而来，使用了双字节编码方案，共收录了21003个汉字，完全支持`GB2312`，同时兼容繁体汉字以及日韩汉字
+  - `GB18030`：最新的中文码表，收录汉字70244个，采用多字节编码，每个字符可以由1、2或是4个字节组成
+- `unicode`：为表达任意语言的任意字符设计的，是业界的统一标准，也称为统一码，万国码。它最多使用4个字节的数字来表达每个字母、符号或文字。有三种编码方案，`utf-8`、`utf-16`、`utf-32`。最常用的为`utf-8`
+  - `utf-8`：互联网工作小组要求所有互联网协议都必须支持`UTF-8`编码，编码规则:
+    - 128个`US-ASCII`字符，只需要一个字节编码
+    - 拉丁文等字符，需要两个
+    - 大部分常用字(含中文)，使用三个字节
+    - 其他极少用的Unicode辅助字符，使用四字节编码
+ 
+- 在IDEA中，使用`FileReader`读取项目中的文件，由于默认的是`utf-8`编码，但由于 windows 中的编码为`GBK`，所以会出现乱码
+
+### 转换流
+- `InputStreamReader`：`Reader`的子集，它读取字节并使用指定的字符集将其解码为字符。它的字符集可以由名称指定，也可接受默认字符集
+  - `InputStreamReader(InputStream in)`：创建一个使用默认字符集的字符流
+  - `InputStreamReader(InputStream in, String charsetName)`：创建一个使用指定字符集的字符流
+- `OutputStreamWriter`：`Writer`的子集，具体用法和`InputStreamReader`类似
+  - 使用步骤
+    1. 创建`OutputStreamWriter`对象，构造方法中传递字节输出流和指定的编码表名称
+    2. 使用`OutputStreamWriter`中的方法`write`，把字符转换为字节存储在缓冲区中
+    3. 使用`OutputStreamWriter`中的方法`flush`，把字节缓冲区的字节刷新到文件中
+  ```java
+  OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream('文件路径'));
+  osw.writer("你好");
+  osw.flush();
+  osw.close();
+  ```
+### 序列化
+java 提供了一种对象序列化的机制。用一个字节序列可以表示一个对象，该字节序列包含该`对象的数据`、`对象的类型`、`对象中存储的属性`等信息。字节序列存储到文件中时，相当于文件中持久保存了一个文件的信息。
+把文件中保存的对象，以流的方式读取出来，叫做对象的反序列化
+- `java.io.ObjectOutputStream extends OutputStream`类，将java中的原始数据类型写出到文件中，实现对象的持久存储
+  - `public ObjectOutputStream(OutputStream out)`：创建一个指定`OutputStream`的`ObjectOutputStream`
+  - `void writeObject(Object obj)`：将指定的对象写入`ObjectOutputStream`
+  使用步骤
+  1. 创建`ObjectOutputStream`对象，构造方法中传递字节输出流
+  2. 使用`ObjectOutputStream`中的`writeObject`方法，把对象写入文件
+  3. 释放资源
+- `java.io.Serializable`：类通过实现此接口以实现其序列化功能，未实现此接口的类将无法使其任何状态序列化或反序列化。可序列化类的所有子类都是可序列化的。此接口没有字段和方法，仅用于表示可序列化的语义
+  - 此接口也叫标记型接口，实现此接口就会给类添加一个标记，当进行序列化或是反序列化时，就会检测类上是否有这个标记，没有就会抛出`NotSerializableException`异常
+- `java.io.ObjectInputStream extends InputStream`类，将序列化的原始数据恢复为对象
+  - `ObjectInputStream(InputStream in)`：创建一个指定`InputStream`的`ObjectInputStream`
+  - `Object readObject()`：读取保存对象的文件
+  使用步骤
+  1. 创建`ObjectInputStream`对象，构造方法中传递字节输入流
+  2. 使用`ObjectInputStream`中的`readObject`方法，读取保存对象的文件
+  3. 释放资源
+  4. 使用对象
+  当不存在对象的`class`文件时，抛出`ClassNotFoundException`异常
+  反序列化的前提
+  - 类必须实现`Serializable`
+  - 必须实现类对象的 class 文件
+- `static`关键字，静态关键字。静态优于对象进入到内存中。被`static`修饰的成员变量是不能被序列化的，序列化的都是对象
+- `transient`关键字，瞬态关键字。被它修饰的成员变量，不能被序列化
+- 当 JVM 在序列化对象时，能找到class文件，但是class文件在序列化对象之后发生了修改，那么反序列化操作也会失败，抛出一个`InvalidClassException`异常。异常原因如下
+  - 该类的序列版本号和流中读取的类描述的版本号不匹配
+  - 该类包含未知数据类型
+  - 该类没有可访问的无参数构造方法
+- 编译器会把java文件编译生成class文件，如果这个类实现了`Serializable`接口，就会给`class`文件生成一个序列号。当修改类文件时，序列号也会重新生成。如果想要不重新生成序列号，可以在类中添加一个成员变量`static final long serialVersion = 42L`
