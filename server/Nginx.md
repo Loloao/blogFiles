@@ -204,3 +204,38 @@ HTTP协议的连接与请求
   解决方案
   1. nginx 结合`LUA`实现高效验证
   2. nginx 和 `LDAP`打通，利用`nginx-auth-ldap`模块
+
+### 静态资源 web 服务
+静态资源类型，静态资源就是那些不需要动态生成的资源
+- 浏览器渲染：`HTML`、`CSS`、`JS`
+- 图片：`JPEG`、`GIF`、`PNG`
+- 视频：`FLV`、`MPEG`
+- 文件：`TXT`等任意下载文件
+静态资源服务场景`CDN`，其实就是把资源存储中心的资源分发给不同地区，各存一份。之后在不同地区的用户，通过智能DNS技术，动态定位到北京的代理上进行请求，就不需要请求资源中心，也就是传输时延的最小化
+- 文件读取
+  - `Syntax`：`sendfile on | off`
+  - `Default`：`sendfile off`
+  - `Context`：`http, server, location, if in location`
+- `tcp_nopush`在`sendfile`开启的情况下，提高网络包的传输效率。把包进行整合，之后一次性发送出去。处理大文件会跟有利
+  - `Syntax`：`tcp_nopush on | off`
+  - `Default`：`tcp_nopush off`
+  - `Context`：`http, server, location`
+- `tcp_nodelay`不会对包进行整合，在`keepalive`连接下，提高网络包的传输实时性
+  - `Syntax`：`tcp_nodelay on | off`
+  - `Default`：`tcp_nodelay on`
+  - `Context`：`http, server, location`
+- 压缩，减少不必要的网络资源消耗
+  - `Syntax`：`gzip on | off`
+  - `Default`：`gzip off`
+  - `Context`：`http, server, location, if in location`
+  压缩比
+  - `Syntax`：`gzip_comp_level level`
+  - `Default`：`gzip_comp_level off`
+  - `Context`：`http, server, location`
+  协议版本
+  - `Syntax`：`gzip_http_version 1.0 | 1.1`
+  - `Default`：`gzip_http_version 1.1`
+  - `Context`：`http, server, location`
+
+ 
+  
