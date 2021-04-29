@@ -1011,6 +1011,9 @@ done
   - `-x`：同时列出该`program name`可能的`PPID`的那个进程
 
 ### SELinux
+`SELinux`其实是`Security Enhanced Linux`的英文缩写
+- 美国国家安全局发现系统出现问题的原因大部分在于内部员工的资源误用。`SELinux`就是整合到内核的一个模块。SELinux 是在进行进程、文件等详细权限配置时依据的一个内核模块，由于启动网络服务的也是进程，因此刚好也能够控制网络服务能否读写系统资源的一道关卡
+- `SELinux`主要管理的就是进程，因此可将主体和本进程画上等号
 
 
 ## daemon
@@ -1049,3 +1052,76 @@ CentOS 7.x 之后，Red Hat 系列的发行版改用`systemd`这个启动服务�
     - `list-units-files`：依据`/usr/lib/systemd/system/`的文件，将所有文件列表说明
   - `--type==TYPE`：也就是之前提到的`unit`类型
 - `systemctl list-dependencies <unit> <--reverse>`：追踪一个`unit`的依赖性
+
+### 与 systemd 的 daemon 运行过程相关的目录简介
+- `/usr/lib/systemd/system/`：Centos 官方提供的软件安装后，默认的启动脚本配置方式都在这里
+- `/run/systemd/system/`：系统执行过程中产生的执行脚本，优先级比上面的高
+- `/etc/systemd/system/`：管理员根据系统需求建立的执行脚本，优先级比上面的高
+- `/etc/sysconfig/*`：几乎所有的服务都会将初始化的一些选项设置写入到这个目录
+- `/var/lib/`：一些会产生数据的服务都会将他的数据写入到这个目录中
+- `/run/`：放了很多`daemon`的缓存，包括`lock`文件以及`PID`文件
+- `/etc/services`：通过这里面的设置来让服务和端口对应一起
+
+### 针对 service 类型的配置文件
+如果你想要额外修改配置文件，应该放置在`/etc/systemd/system/`目录中。
+可能在系统中的服务
+- `dovecot`：可以设置收发邮件的服务，除非你的 Linux 是邮件服务器才需要这个服务
+- `httpd`：这个服务可以让`Linux`服务器称为网站服务器
+- `named`：也就是`Domain Name System, DNS`的服务
+- `nfs | nfs-server`：也就是`Network Filesystem`
+- `smb | nmb`：这个服务可让 Linux 称为网络邻居
+- `vsftpd`：作为文件传输服务器使用`FTP`
+- `sshd`：远程服务器的功能，它可以加密
+- `rpcbind`：完成 RPC 协议的重要服务，包括`NFS`，`NIS`都需要这个东西的协助
+- `postfix`：邮件发送主机
+
+## 日志
+日志文件就是记录系统活动信息的几个文件，何时何地何人做了什么操作等
+- Linux 常见的日志文件文件名
+  - `/var/log/boot.log`：科技启动的时候系统内核回去检测和启动硬件，这些流程会记录在这个文件中
+  - `/var/log/cron`：`crontab`任务的执行
+  - `/var/log/dmesg`：记录系统在开机的时候内核检测过程所产生的各项信息
+  - `/var/log/lastlog`：可以记录系统上所有账号最后一次登录系统时的相关信息
+  - `/var/log/maillog | /var/log/mail/*`：记录邮件的往来信息
+  - `/var/log/messages`：几乎系统发生的所有错误信息都会记录在这个文件中
+  - `/var/log/secure`：只要牵涉到需要输入账号密码的软件，都会记录到这个文件中
+  - `/var/log/wtmp | /var/log/faillog`：这两个文件可以记录正确登录系统者的账户信息和错误登录时所使用的账户信息
+  - `/var/log/httpd/* | /var/log/samba/*`：不同的网络服务会使用它们自己的日志文件来记录它们自己所产生的各种信息
+- 针对日志文件所需要的功能，我们需要的服务和进程有
+  - `systemd-journald.service`：最主要的信息记录者，由`systemd`提供，作为二进制文件放置在内存中
+  - `rsyslog.service`：主要手机登录系统与网络等服务的信息
+  - `logrotate`：主要在进行日志文件的轮询功能
+
+### 文件内容格式
+一般来说，系统产生的信息并记录下来的内容中，每条信息均会记录下面的几个重要内容
+- 事件发生的日期与实践
+- 发生此事件的主机名
+- 启动此事件的服务名或命令与函数名称
+- 该信息的实际内容
+
+### rsyslog.service 记录日志文件的服务
+- `rsyslogd`：此`daemon`可以负责主机产生的各种信息的记录，`rsyslogd`针对各种服务与信息的配置文件就是`/etc/rsyslog.conf`，这个文件规定了
+  1. 什么服务
+  2. 什么等级信息
+  3. 需要被记录在哪里
+- 可以将日志文件传送到其他远程主机上，通过`man`查询，更改`/etc/rsyslog.conf`
+
+### logrotate
+`rsyslog`使用`daemon`的方式来启动，当有需求的时刻会立即执行，但`logrotate`确实在规定的时间到了之后才来进行日志文件的轮询，所以这个`logrotate`程序是挂在`cron`下进行的
+- `logrotate`的配置文件在
+  - `/etc/logrotate.conf`：主要的参数文件
+  - `/etc/logrotate.d/`：该文件的所有文件都会被主动地读入`/etc/logrotate.conf`当中使用
+- `logrotate <logfile>`：用于轮询
+  - `-v`：启动显示模式，会显示`logrotate`运行的过程
+  - `-f`：不论是否符合配置文件的数据，强制每个日志文件都进行轮询的操作
+
+### systemd-journald.service
+`systemd-journald`只会在内存中写入，所以只会记录此次开机启动的所有信息，记录到`/run/log`下
+- `journalctl [--since TIME] [--until TIME] <optional>`：用于查看`systemd-journald.service`的数据
+  - `-n`：显示最近几行
+  - `-r`：反向输出
+  - `-p`：限制后面所接的信息重要性排序
+  - `-f`：类似`tail -f`的功能
+- `logger [-p 服务名称.等级] <"信息">`
+- `logwatch`：每天分析一次日志文件，并且将数据以 email 的格式发送给`root`
+
