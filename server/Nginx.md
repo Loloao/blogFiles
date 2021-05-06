@@ -152,7 +152,7 @@ HTTP协议的连接与请求
 - HTTP2.0：多路复用 TCP 复用
 - `-limit_conn_module`：连接限制
   调用空间进行限制，`key`就是对什么进行限制，比如`IP`，`name`就是这个`zone`的名字，`size`就是大小
-  - `Syntax`：`limit_conn_zone key zone=name:size
+  - `Syntax`：`limit_conn_zone key zone=name:size`
   - `Default`：--
   - `Context`：`http`
   以及，`zone`表示申请的`zone`名，`number`就是同一时间只能允许多少个
@@ -236,6 +236,43 @@ HTTP协议的连接与请求
   - `Syntax`：`gzip_http_version 1.0 | 1.1`
   - `Default`：`gzip_http_version 1.1`
   - `Context`：`http, server, location`
+  `http_gzip_static_module`：默认的模块，可以预读`gzip`功能，当读取静态文件比如`html`文件时，会先去找`.gz`结尾的文件
+  `http_gunzip_module`：当不支持`gzip`时，应用支持`gunzip`的压缩方式，现实很少用到
+- 缓存：`expires`用于添加`Cache-Control`、`Expires`头
+  - `Syntax`：`expires [modified] time;`或`expores epoch | max | off;`
+  - `Default`: `expores off`
+  - `Context`: `http, server, location, if in location`
+- 跨域
+  - `Syntax`: `add_header name value [always]`
+  - `Default`: --
+  - `Context`: `http, server, location, if in location`
+- 防盗链：防止资源被盗用，希望是一些合法用户来访问网站，防止爬取。首要方式：区别那些请求是非正常的用户请求
+  基于`http_refer`防盗链配置模块，同时`http_refer`也是一个变量。它会记录上次请求的域名
+  - `Syntax`: `valid_referers none | blocked | server_names | string...;`如果`none`表示只允许不带`refer`的请求`blocked`表示不带协议信息的请求是不被允许的
+  - `Default`: --
+  - `Context`: `server, location`
+  ```nginx
+  valid_referers none blocked 116.62.103.228
+  if ($invalid_referer) {
+    return 403
+  }
+  ```
 
- 
-  
+### 代理服务
+按应用场景模式来分类有两种，正向代理和反向代理
+- 正向代理: 即通过代理访问其他代理
+- 反向代理: 针对性地访问某个站点的时候，为服务端提供服务
+常见的反向代理模式和Nginx代理模块
+|反向代理模式|Nginx 配置模块|
+| ---- | ---- |
+|http、websocket、https| ngx_http_proxy_module|
+|fastcgi| ngx_http_fastcgi_module|
+|uwsgi| ngx_http_uwsgi_module|
+|grpc| ngx_http_v2_module|
+- 常见的代理语法
+  - `Syntax`: `proxy_pass URL`
+  - `Default`: --
+  - `Context`: `location, if in location, limit_except`
+
+## 中间件架构  
+
