@@ -273,6 +273,64 @@ HTTP协议的连接与请求
   - `Syntax`: `proxy_pass URL`
   - `Default`: --
   - `Context`: `location, if in location, limit_except`
+- 缓冲区，后端可能发送的只是小部分头信息，这里可以在数据全部存在时，才会返回数据，但会占用内存资源
+  - `Syntax`: `proxy_buffering on | off;`
+  - `Default`: `proxy_buffering on;`
+  - `Context`: `http, server, location`
+- 跳转重定向
+  - `Syntax`: `proxy_redirect default; | proxy_direct off; | proxy_redirect redirect replacement;`
+  - `Default`: `proxy_buffering default;`
+  - `Context`: `http, server, location`
+- 头信息，把头信息从代理带到后端
+  - `Syntax`: `proxy_set_header field value;`
+  - `Default`: `proxy_set_header Host $proxy_host; | proxy_set_header Connection close;`
+  - `Context`: `http, server, location`
+- 超时，连接超时
+  - `Syntax`: `proxy_connect_timeout time;`
+  - `Default`: `proxy_connect_timeout 60s;`
+  - `Context`: `http, server, location`
+
+### 缓存
+缓存分为服务端缓存，代理(Nginx)缓存，客户端缓存
+代理缓存就是在请求的时候直接从代理中获取缓存
+- `proxy_cache`配置语法，定义`path`，`path`就是存放缓存文件的地址
+  - `Syntax`: `proxy_cache_path path;`
+  - `Default`: --
+  - `Context`: `http`
+  `proxy_zone`其中的`zone`就是定义的`path`
+  - `Syntax`: `proxy_cache zone | off;`
+  - `Default`: `proxy_cache off`
+  - `Context`: `http, server, location`
+  缓存过期周期，`code`就是状态码
+  - `Syntax`: `proxy_cache_valid [code ...] time;`
+  - `Default`: --
+  - `Context`: `http, server, location`
+如何清理指定缓存
+- `rm -rf`缓存目录内容
+- 第三方模块`ngx_cache_purge`
+如何让部分页面不缓存，`url`为参数
+  - `Syntax`: `proxy_no_cache string ...`
+  - `Default`: --
+  - `Context`: `http, server, location`
+缓存命中分析
+  - `add_header Nginx-Cache "$upstream_cache_status";`给`response`添加头信息
+  - 通过设置`log_format`打印日志分析，也是使用`$upstream_cache_status`这个变量
+  - `$upstream_cache_status`有以下状态
+    - `MISS`：未命中，请求被传送到后台处理
+    - `HIT`：缓存命中
+    - `EXPIRED`：缓存已经过期，请求被传送到后台处理
+    - `UPDATING`：正在更新缓存，经使用旧的应答
+    - `STALE`：后端得到过期的应答
+  缓存命中率 = HIT 次数 / 总请求次数，通过分析Nginx 里的`Acess`日志可以分析得到命中率
+  ```
+  log_format main '"$upstream_cache_status"';
+  ```
+对大文件的分片请求，前端请求到达之后，根据定义的分片，将文件进行切片再分为多个不同的小的请求同时请求后端
+  - `Syntax`: `slice size;`
+  - `Default`: `slice 0;`
+  - `Context`: `http, server, location`
+  优势：每个子请求收到的数据会形成一个独立文件，一个请求断了，其他请求不受影响
+  缺点：当文件很大或`slice`很小的时候，可能会导致文件描述符耗尽等情况
 
 ## 中间件架构  
 
