@@ -85,3 +85,16 @@ Git 源代码安装`ansible2.5`
 ## Jenkins
 主流的运维开发平台，兼容所有主流开发环境，插件市场可与海量业内主流开发工具实现集成。`Job`为配置单位与日志管理，使运维与开发人员能协同工作
 根据权限划分不同`Job`不同角色，具有强大的负载均衡功能，保证我们项目的可靠性
+
+### 安装
+- 首先需要安装java
+- `wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -`导入`Jenkins`存储库`GPG`密钥
+- `sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'`将`Jenkins`存储库添加到系统中
+- `sudo apt update`和`sudo apt install jenkins`安装`jenkins`
+- `systemctl status jenkins`打印服务状态
+- `/etc/default/jenkins`可改变配置文件
+- jenkins 默认用户为`jenkins`，需要更改为管理员
+- 需要更改 jenkins 文件的执行权限
+  - `sudo chown -R loloao:loloao /var/lib/jenkins`
+  - `sudo chown -R loloao:loloao /var/log/jenkins`
+  - `sudo chown -R loloao:loloao /var/cache/jenkins`
