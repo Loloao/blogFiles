@@ -98,3 +98,111 @@ Git 源代码安装`ansible2.5`
   - `sudo chown -R loloao:loloao /var/lib/jenkins`
   - `sudo chown -R loloao:loloao /var/log/jenkins`
   - `sudo chown -R loloao:loloao /var/cache/jenkins`
+
+### Jenkins Job
+代表一个任务或项目，并且可配置与可执行，执行后的记录称之为`Build`，所有文件集中保存
+- `Freestyle Job`：
+  - 需要在页面添加模块配置项与参数完成配置
+  - 每个`Job`只能实现一个开发功能
+  - 无法将配置代码化，不利于`Job`配置迁移与版本控制。不能记录和保存所有人的系统配置历史，也就是不知道谁更改了
+  - 逻辑相对简单，无需额外学习成本
+- `Pipeline Job`：匹配持续集成与持续交互的概念
+  - 所有模块，参数配置都可以体现为一个`pipeline`脚本
+  - 可以定义多个`stage`构建一个管道工作集
+  - 所有配置代码化，方便`Job`配置迁移与版本控制
+
+`Jenkins Job`构建配置
+1. 配置`Jenkins server`本地`Gitlab DNS`
+2. 安装`git client`，`curl`工具依赖
+3. 关闭系统`Git http.sslVerify`安全认证
+4. 添加`Jenkins`后台`Git client user`与`email`
+5. 添加`Jenkins`后台`Git Credential`凭据，配置全局凭据`<jenkins host>/credentials/store/system/domain/_/newCredentials`
+
+`Pipeline Job`编写规范，基础架构
+- 所有代码包裹在`pipeline{}`层内
+- `stages{}`层用来包含该`pipeline`所有`stage`子层
+- `stage{}`层用来包含我们需要编写任务的`step{}`子层
+- `steps{]`层用来添加我们具体需要调用的模块语句
+- `agent`：定义`pipeline`在哪里运行，可以使用`any`，`none`或具体的`Jenkins node`主机名等，比如我们要特指在`node1`上执行，可以写成`agent{ node {label 'node1'}}`
+- `environment`：可以使用`变量名称=变量值`定义环境变量，可以定义全局环境变量，应用所有`stages`任务。可以单独定义`stage`环境变量应用单独的`stage`任务
+  `environment { PATH="/bin:/sbin:/usr/bin..."}`
+- `script`：在`steps`内定义`script{}`，可以使用`groovy`脚本语言，用来进行脚本逻辑运算
+- `steps`
+  - `echo`：打印输出
+  - `sh`：调用 Linux 系统 shell 命令
+  - `git url`：调用`git`模块进行 git 相关操作
+```
+#!groovy
+
+pipeline {
+	agent {
+		node {
+			label 'master'
+		}
+	}
+
+	environment {
+		PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+	}
+
+	parameters {
+		choice(
+			choices: 'dev\nprod',
+			description: 'choose deploy environment',
+			name: 'deploy_env'
+		)
+
+		string (
+			name: 'version',
+			defaultValue: '1.0.0',
+			description: 'build version'
+		)
+	}
+
+	stages {
+		stage("Checkout test repo") {
+			steps {
+				dir("${env.WORKSPACE}") {
+					git branch: 'master',
+					credentialsId: '68764351-42af-4130-bbad-67ea8410e12c',
+					url: 'http://192.168.3.2:8082/root/test-repo.git'
+				}
+			}
+		}
+
+		stage("Print env variable") {
+			steps {
+				dir ("${env.WORKSPACE}") {
+					sh """
+					echo "[INFO] Print env variable"
+					echo "current deployment environment is $deploy_env" >> test.properties
+					echo "The build is $version" >> test.properties
+					echo "[INFO] Done"
+					"""
+				}
+			}
+		}
+
+		stage("Check test properties") {
+			steps {
+				dir ("${env.WORKSPACE}") {
+					sh """
+					echo "[INFO] Check test properties"
+					if [ -s test.properties ]
+					then
+						cat test.properties
+						echo "[INFO] Done"
+					else
+						echo "test.properties is empty"
+					fi
+
+					echo "[INFO] Build finished"
+					"""
+				}
+			}
+		}
+	}
+}
+```
+
+### Jenkins 应用
