@@ -47,8 +47,102 @@
 1. 解决了开发和运维之间的矛盾
 2. 在开发和运维之间搭建了一个桥梁，是实现 devops 的最佳解决方案
 
+
 ### 一些技巧
 
 - `docker-machine`可以创建一个拥有 docker 的 linux 虚拟机
 - `docker playground`可以不用安装 docker 来运行 docker
+- 如果我们想不用`sudo`就使用`docker`命令，可以将用户加入`docker`用户组
+  - `sudo groupadd docker`
+  - `sudo gpasswd -a <user> docker`
+  - 重启`docker`进程`sudo service docker restart`并重启`shell`
+
+## Dock Platform
+Docker 提供了一个开发，打包，运行app的平台，并把 app 和底层`infrastructure`隔离，按顺序分为以下几层
+1. `Application`
+2. `Docker Engine`它有以下几个东西
+  - 后台进程`dockerd`：用于容器和存储的管理，`ps -ef | grep docker`可以看到进程在`/usr/bin/dockerd`
+  - `REST API Server`：用于`dockerd`和`docker`通信
+  - CLI接口`docker`：
+3. `Infrastructure(physical/virtual)`
+![Docker Architecture](./docker-architecture.png)
+底层技术支持，都是 linux 早已存在的技术
+- `Namespaces`：隔离`pid`，`net`，`ipc`，`mnt`，`uts`
+- `Control group`：做资源限制
+- `Union file systems`：`Container`和`image`的分层
+
+### Docker Image
+> image 是什么？
+- 它是文件和`meta data`的集合`root filesystem`
+- 分层的，并且每一层可以添加改变删除文件，成为一个新的`image`
+- 不同的`image`可以共享相同的`layer`
+- `Image`本身是`read-only`的
+命令
+- `docker history <image id>`：可查看 image 历史
+- `docker images`或`docker image ls`：可以列出所有 docker
+- `docker rmi`或`docker image rm <image id>`：移除`image`
+- `docker build`或`docker image build`：根据一个`Dockerfile`创建`image`
+获取`Image`
+- `Build from Dockerfile`：根据`Dockerfile`进行构建
+  ```yaml
+  # base image
+  FROM ubuntu:14.04
+  # 基本标识
+  LABEL maintainer="Peng Xiao <123@qq.com>
+  # 在 base image 基础上跑命令
+  RUN apt-get update && apt-get install -y redis-server
+  # 暴露端口
+  EXPOSE 6379
+  # 通讯入口
+  ENTRYPOINT ["/usr/bin/redis-server"]
+  ```
+  之后通过`docker build -t <image name> <dockerfile 路径>`来进行构建
+- `Pull from Registry`：从`Registry`上获取`docker image`，具体`image`可从`https://hub.docker.com`上查阅
+
+### Container
+> Container 是什么？
+- 通过`docker`创建
+- 在`Image layer`之上建立一个`container layer`可读写
+- 类比面向对象：类和实例
+- `Image`负责 app 的存储和分发，`Container`负责运行`app`
+命令
+- `docker run <image name>:<image version>`：基于`image`创建一个`container`，`version`不传表示最新
+- `docker ps -a`或`docker container ls`：列出当前本地正在运行的容器
+  - `-a`：列出所有容器，包括正在运行和退出的
+  - `-aq`：列出所有`container id`
+  - `-it`：可以进入这个`image`里输入命令
+  - 可通过`docker rm $(docker ps -aq)`将所有正在运行的`container`移除
+  - `docker rm $(docker container ls -f "status-exited" -q)`将已经退出的容器移除
+- `docker rm`或`docker container rm <container id>`：移除正在运行的`docker container`
+- `docker commit <container id> <container name>`或`docker container commit`：基于某个`container`，在某个`container`中做了一些变化，比如安装了某些软件，就能将它再构建为一个`image`，但这种方式并不提倡
+
+### Dockerfile
+github 上的`docker-library`有很多官方`image`的`dockerfile`，可以作为参考
+- `FROM`：指定了我们定义的`base image`是什么，尽量使用官方的`image`
+  - `FROM scratch`：制作`base image`
+  - `FROM centos`：使用`base image`
+- `LABEL`：指定`image`信息，类似于注释
+  - `maintainer`：作者
+  - `version`：版本
+  - `description`：描述
+- `RUN`：运行一些命令，但是要注意每运行一次`RUN`，`image`就会生成新的一层，复杂的`RUN`请用反斜线换行，避免无用分层，合并多条命令成一行。
+- `CMD`：设置容器启动后默认执行的命令和参数
+  - 如果`docker run`指定了其他命令，`CMD`命令会被忽略
+  - 如果定义了多个`CMD`，只有最后一个会执行
+- `ENTRYPOINT`：设置容器启动时运行的命令
+  - 让容器以应用程序或服务的形式运行，比如说启动一个数据库
+  - 不会被忽略，一定会执行
+  - 最好写一个 shell 脚本作为`entrypoint`，比如
+  ```dockerfile
+  COPY docker-entrypoint.sh /usr/local/bin/
+  ENTRYPOINT ["docker-entrypoint.sh"]
+  ```
+使用上面三个操作可以有两种格式
+1. Shell 格式：`RUN apt-get install -y vim`，能够识别变量`ENV`
+2. Exec 格式：`RUN ["apt-get", "install", "-y", "vim"]`，它不能识别变量，除非指定`shell`，比如`["/bin/bash", "-c", "echo hello $name"]`才会识别这里的`$name`变量
+- `WORKDIR`：当前工作目录，如果后面的值没有则会自动创建目录，用`WORKDIR`，不要使用`RUN cd`，同时尽量使用绝对目录
+- `ADD`：把本地文件添加到`image`里，它还可以将压缩文件解压缩
+- `COPY`：类似`ADD`，但不能解压缩，大部分情况`COPY`优于`ADD`，添加远程文件/目录请使用`curl`或`wget`
+- `ENV`：用于设定环境变量，在下面的命令里可以使用，可以增加可维护性
+
 
