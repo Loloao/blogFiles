@@ -162,6 +162,7 @@ github 上的`docker-library`有很多官方`image`的`dockerfile`，可以作�
 - `ADD`：把本地文件添加到`image`里，它还可以将压缩文件解压缩
 - `COPY`：类似`ADD`，但不能解压缩，大部分情况`COPY`优于`ADD`，添加远程文件/目录请使用`curl`或`wget`
 - `ENV`：用于设定环境变量，在下面的命令里可以使用，可以增加可维护性
+- `VOLUME`：可以设定本地持久化存储路径，比如`VOLUME ["/var/lib/mysql"]`，之后通过`docker run -v mysql:/var/lib/mysql`来进行    
 每一步命令都会生成一个临时的`container id`，可以`dicker run -it <container id> /bin/bash`进行debug
 
 ### 镜像的发布
@@ -186,4 +187,71 @@ github 上的`docker-library`有很多官方`image`的`dockerfile`，可以作�
 `VXLAN`可以使用隧道进行多机通信
 
 ## Docker 的持久化存储和数据共享
-在`Container`中进行数据的存储仅限于容器里面，在容器删除时数据也会被一起删除
+在`Container`中进行数据的存储仅限于容器里面，在容器删除时数据也会被一起删除，现在的持久化数据的方案有两类
+- 基于本地文件系统的`Volume`，可以在执行`Docker create`或`Docker run`时，通过`-v`参数将主机的目录作为容器的数据卷
+- 基于`plugin`的`Volume`，支持第三方的存储方案，比如`NAS`，`aws`
+`Volume`有两种类型
+- 受管理的`data Volume`，由 docker 后台自动创建
+- 绑定挂载的`Volume`，具体挂在位置可以由用户指定
+`Mysql`在官方`Dockerfile`中有个配置项`Volume`可以将数据存储在它的值`/var/lib/mysql`中
+- `docker volume ls`：查看本地的`volume`
+- `docker volume inspect <volume id>`：查看对应`volume`的详细情况
+- `docker volume rm <volume id>`：删除对应`volume`空间
+删除`volume`后，可以通过`docker run`的`-v`选项创建拥有`volume`别名的`container`
+- `docker run -d -v mysql:/var/lib/mysql ...`创建对应`volume`别名的`container`
+可在`Dockfile`文件中自己设置`VOLUME`配置项来指定存储空间
+
+### Bind Mouting
+我们可以指定本地的文件存储路径和容器存储路径进行同步，比如`docker run -v /home/aaa:/root/aaa`
+
+## Docker Compose
+多容器的APP太恶心
+- 要从`Dockerfile build image`或`Dockerhub`拉取`image`
+- 要创建多个`container`
+- 要管理这些`container`(启动停止删除）
+此时可以通过`Docker Compose`进行批处理，它依赖于一个`yml`文件，这个文件有三大概念
+- `Service`：相当于一个`container`，类似`docker run`，可以给其指定`network`和`volume`，所以可以给`service`指定`network`和`Volume`的引用
+- `Network`：可以指定网络
+- `Volume`：可以指定`volume`
+
+### docker-compose 命令
+linux 下安装：`https://docs.docker.com/compose/install/#install-compose`
+- `docker-compose up`：启动`compose`
+  - `-f <yml文件>`：不加上这个选项相当于`-f docker-compose.yml`，即当前目录下的`docker-compose.yml`文件
+  - `-d`：后台启动，但此时不会打印 log
+  - `--scale <SERVICE=NUM>`：将`service`增加到`num`个，也就是启动三个同样的服务，加上`haproxy`可以用于负载均衡
+- `docker-compose ps`：查看启动的所有`service`
+- `docker-compose stop`：会停止所有`service`
+- `docker-compose down`：会停止所有`service`并删除定义的`service`，`network`，`volume`，但不会删除`image`
+- `docker-compose images`：列举出`container`以及使用的`image`
+- `docker-compose exec <Service> <command>`：和`docker exec`类似
+
+## Swarm Mode
+这个容器编排工具已经集成在 docker 里了，只不过正常不是运行在这个模式下
+`Swarm`是一个集群的架构，集群就会有节点，节点就会有角色，有两种角色
+- `Manager`：集群的大脑，如果有多个`Manager`就需要进行同步，这里就会用到一个分布式的数据库`Raft consensus group`
+- `Worker`：也就是干活的节点，有的会通过网络同步信息
+有两个重要的概念
+- `Service`：和`docker compose`里的`Service`概念基本一致，相当于就是一个
+- `Replicas`：做扩展，一个服务可能有多个相同的`container`来进行负载均衡，此时一个`container`就相当于一个·`replicas`
+
+### docker swarm
+- `docker swarm init`：初始化一个`swarm cluster`，这个命令会生成一个`token`，需要通过`docker swarm join --token <token>`来加入`cluster`
+  - `--advertise-addr <ip>`：用于宣告一个地址让各个节点知道`cluster`的存在
+- `docker swarm join --token <token>`：加入某个`cluster`
+- `docker node ls`：显示当前 docker 的节点
+
+### docker service    
+`docker service`可以在整个集群中控制`service`
+- `docker service create <image> <command>`：创建一个`service`，如果是`docker run`只能在本地创建`service`，而`service`命令可以在整个`cluster`创建`service`
+  - `--name`：命名`service`
+  - `-e`：设置环境变量
+  - `--mount <type=类型名>`：类型名可以为`volume`，用预设值`volume`
+  - `--network <netowrk>`：设置所在网络
+- `docker service ls`：列出所有`service`
+- `docker service ps <service>`：查看服务状态
+- `docker service scale <service=num>`：用于扩展多个`servcie`，`num`为扩展的数量，扩展之后的服务会均衡分布在各个节点中，同时这个`scale`会保持`replicas`的数量不变，如果有`replicas`被`shutdown`，会在`service`内重新创建一个相同的`replicas`来进行修补
+- `docker service rm <service>`：删除`service`
+`service`是在不同的`swarm`几点中创建的，我们不知道它们的位置，所以我们需要在它们之间进行通信。我们可以通过`overlay`的方式让所有机器连在同一个网络中
+- `docker network create -d overlay <network name>`：创建一个`overlay`网络，如果这个网络下有一个`service`，而这个`service`下的主机如果存在节点，就会共享网络
+-
