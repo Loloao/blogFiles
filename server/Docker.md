@@ -254,4 +254,13 @@ linux 下安装：`https://docs.docker.com/compose/install/#install-compose`
 - `docker service rm <service>`：删除`service`
 `service`是在不同的`swarm`几点中创建的，我们不知道它们的位置，所以我们需要在它们之间进行通信。我们可以通过`overlay`的方式让所有机器连在同一个网络中
 - `docker network create -d overlay <network name>`：创建一个`overlay`网络，如果这个网络下有一个`service`，而这个`service`下的主机如果存在节点，就会共享网络
--
+两个`Service`可以进行通信，连到同一个网络时可以通过服务名进行通信，利用的是`DNS`服务发现。
+如果有`service`连接到一个`overlay`网络时，会有一条`DNS`记录，通过这个`DNS`记录就可以知道`service`的ip地址。
+但是这里获得的ip不是每个服务的`docker`所在的ip，而是虚拟ip`vip`来解决，而同一个`service`下的`replicas`的ip是一样的，会和实际ip有一个`map`关系
+上面说的技术就是`Routing Mesh`
+- `internal`：`Container`和`Container`之间的访问通过`overlay`网络，也就是虚拟IP来做到负载均衡。其实虚拟`IP`就是`LVS(linux virtual Server)`用于高可用负载均衡
+- `Ingress`：如果服务有绑定接口，则此服务可以通过任意`swarm`节点的相应接口访问，也就是在同一个`cluster`里可以通过端口访问服务
+  - 外部访问的负载均衡
+  - 服务端口碑暴露到各个`swarm`节点
+  - 内部通过`IPVS`进行负载均衡，每次访问服务的时候让不同的`replicas`响应
+
