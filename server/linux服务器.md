@@ -305,3 +305,16 @@
   - `etab`：记录了`NFS`缩宫想出来的目录的完整权限设置值
   - `xtab`：记录了曾经链接到此`NFS`服务器的相关客户端的数据
 - `usr/sbin/showmount`：客户端查询服务器共享资源的命令
+
+### 启动 NFS
+- `/etc/init.d/rpcbind start`：启动`rpcbind`，如果已经执行，就不需要启动了
+- `/etc/init.d/nfs start`：启动`NFS`
+`NFS`会启动很多`port`，主要的端口有
+- `rpcbind`启动的`port`在`111`，同时启动在`UDP`与`TCP`
+- `NFS`本身的服务启动在`port 2049`
+- 其他`rpc.*`服务启动的`port`则是随机产生的，因此需向`port 111`注册
+每个`rpc`服务可以使用`rpcinfo -p <IP | hostname>`查看
+- `-p`：针对某`IP`显示出所有的`port`与`program`的信息
+- `-t`：针对某主机的某个程序检查其`TCP`数据包所在的软件版本
+- `-u`：针对某主机的某支程序检查其`UDP`数据报所在的软件版本
+
