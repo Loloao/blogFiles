@@ -118,7 +118,7 @@
   - `select * from <表名>`：查询表中数据
   - `select distinct <字段名> from <表名>`：主去除重复的结果集，要是加上`distinct`这个字段，如果写了多个字段则多个字段必须完全一样才会看作一样
   - `select <字段1 + 字段2> from <表名>`：计算列，一般只进行数值型的就按比如可以通过`+`来加上一个字段表示多个字段值相加后的值，如果有`null`参与了计算则值也为`null`。另外也可以给字段起别名，在字段后加个空格即可
-  
+
 - 条件查询
   - `where`后跟条件语句
   - 运算符
@@ -133,3 +133,15 @@
     - `and | &&`：与，建议使用前者，`&&`并不通用
     - `or | ||`：或
     - `not | !`：非
+ 
+- 约束：对表中的数据进行限定，保证数据的正确性，有效性和完整性。分类：
+  - 主键约束`primary key`，非空且唯一，一张表只有一个字段为主键，主键就是表中记录的唯一标识。如果某一列是数值类型，使用`auto_increment`可以完成值自动增长
+    删除主键约束`alter table <表名> drop primary key`
+  - 非空约束`not null`，值不能为`null`
+  - 唯一约束`unique`，值不能重复。多个`null`不算重复
+  - 外键约束`foreign key`，就是让本表的外键和其他表的被唯一约束的列联系起来`constraint <外键名> foreign key (<外键列名>) references <主表名>(<主表列名>)`
+    删除外键约束`alter table <表名> drop foreign key <外键名>`
+    添加外键约束`alter table <表名> add constraint <外键名> foreign key (<外键列名>) references <主表名>(<主表列名>)`
+    级联添加`on update cascader`
+    级联删除`on delete cascader`
+  可以在创建表的时候进行约束，比如`name varchar(20) not null`，或是创建表之后添加约束`alter table <表名> modify <列名> <列类型> not null`
