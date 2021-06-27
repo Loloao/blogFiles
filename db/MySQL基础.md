@@ -146,6 +146,26 @@
     级联删除`on delete cascader`
   可以在创建表的时候进行约束，比如`name varchar(20) not null`，或是创建表之后添加约束`alter table <表名> modify <列名> <列类型> not null`
  
+`DCL`管理用户、授权
+一般来讲会有`DBA(数据库管理员)`来对数据库进行管理
+当 mysql 安装完成之后会有一个 mysql 的文件夹，里面会有一个`user`表用于存放用户信息，所以操作用户其实就是操作这张表，我们首先要
+1. 切换到 mysql 数据库`use mysql;`
+2. 查询`user`表`select * from user;`，`%`表示可以在任意主机使用用户登录数据库
+- 管理用户
+  - `create user <用户名>@<主机名> identified by <密码>`：创建用户
+  - `drop user <用户名>@<主机名>`：删除用户
+- 设置密码
+  - `set password for <用户名>@<主机名> = password(<新密码>)`：更改用户密码
+  - 如果忘了`root`用户的密码怎么办？
+    1. `net stop mysql`：停止 mysql 服务，需要管理员权限
+    2. `mysql --skip-grant-tables`： 使用无验证方式启动 mysql，同时必须在`mysql`所在的物理主机上才可以操作
+    3. `update user set password = password('root') where user = 'root'`：更新`root`密码
+    4. `net start mysql`：启动 mysql 服务
+- 权限配置
+  - `show grants for <用户名>@<主机名>;`：查询权限
+  - `grant <权限列表> on <数据库名>.<表名> to <用户名>@<主机名>;`：授予权限，权限列表可以有`select, delete, update`，`*.*`表示所有权限
+  - `revoke <权限列表> on <数据库名>.<表名> to <用户名>@<主机名>;`：撤销权限
+
 ## 数据库设计
 表的设计直接影响到项目开发的难易程度，也影响到项目性能
 多表之间的关系
@@ -184,4 +204,46 @@
   - 多行多列：可将查询语句作为表来使用，`select <字段列表> from <表1>, <查询语句> where <条件>`
       
 ## 事务
-如果一个包含多个步骤的业务操作，被事务管理，这些操作要不同时成功要不同时失败
+如果一个包含多个步骤的业务操作，被事务管理，这些操作要不同时成功要不同时失败。如果操作失败就回滚，操作如下
+1. 开启事务：`start transaction`
+2. 回滚：`rollback`
+3. 提交：`commit`
+比如，张三给李四转500
+```sql
+# 开启事务
+start transaction;
+update account set balance = balance - 500 where name = 'zhangsan';
+update account set balance = balance + 500 where name = 'lisi'; 
+# 如果没问题提交数据
+commit;
+# 发现出问题了，回滚事务，回滚到启动事务之前
+rollback;
+```
+在Mysql中事务默认自动提交，一条`DML(赠删改)`会自动提交一次事务，而Oracle数据库默认手动提交
+- `select @@autocommit;`：如果值为`1`表示默认提交方式为自动提交，`0`为手动提交
+- `set @@autocommit = 0;`：用于设定事务提交方式，可以将默认自动提交的事务改为手动提交才会生效
+
+### 事务的四大特征
+1. 原子性：是不可分割的最小操作单位，要么同时成功，要么同时失败
+2. 持久性：如果事务一旦提交或回滚后，数据会持久化地保存数据
+3. 隔离性：多个事物之间，相互独立
+4. 一致性：事务操作前后，数据总量不变
+
+### 事务的隔离级别
+多个事物之间相互独立的，但是如果多个事务操作同一批数据，则会引发一些问题，设置不同的隔离级别就可以解决这些问题
+存在问题
+- 脏读：一个事务读取到另一个事务没有提交的数据
+- 不可重复读(虚读)：在同一个事务中，两次读取到的数据不一样
+- 幻读：一个事务(DML)数据表中所有记录，另一个事务添加了一一条数据，则第一个事务查询不到自己的修改
+隔离级别
+- `read uncommitted`：读未提交，产生的问题：脏读、不可重复读、幻读，同一个事务只要更改了数据就会发生变化
+- `read committed`：读已提交，产生的问题：不可重复读、幻读，orcale 默认为这种，同一个事务只要有一个地方`commit`数据就会发生变化
+- `repeated read`：可重复读，产生的问题：mysql 默认，幻读，也就是同一个事务只有都`commit`之后读取的数据才会发生变化
+- `serializable`：串行化：可以解决所有问题，当一个事务在处理一张表时，这个表，会变为不可操作，任何操作会进入无限等待状态，当`commit`之后才会有结果
+问题表现
+- 脏读：事务读取到未`commit`的数据
+- 不可重复读：也就是两次读取的数据不一样
+注意：隔离级别从小到大安全性越来越高，但效率越来越低
+- `set global transaction isolation level <级别字符串>`：数据库设置隔离级别
+- `select @@tx_isolation`：查询隔离级别
+
