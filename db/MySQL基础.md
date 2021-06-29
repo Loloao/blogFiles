@@ -247,3 +247,34 @@ rollback;
 - `set global transaction isolation level <级别字符串>`：数据库设置隔离级别
 - `select @@tx_isolation`：查询隔离级别
 
+## JDBC(Java Database Connectivity)
+`JDBC`为Java操作数据库语言，本质是希望使用一套Java代码可以操作所有的关系型数据库，`JDBC`定义了操作所有关系型数据库的规则(接口)，各个数据库厂商去实现这套接口，提供数据库驱动`jar`包，我们可以使用这套`JDBC`编程，真正执行的是驱动`jar`包中的类
+
+### 如何使用`JDBC`
+1. 导入驱动`jar`包，先复制`jar`包到`libs`目录下，然后右键`Add As Library`
+2. 注册驱动`Class.forName('com.mysql.jdbc.Driver')`
+3. 获取数据库连接对象`Connection`，`Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/db3", "root", "password")`
+4. 定义`sql`：`String sql = "update account set balance = 500 where id = 1"`
+5. 获取执行`sql`语句的对象`Statement`：`Statement stmt = conn.createStatement();`
+6. 执行`sql`，接受返回结果：`int count = stmt.executeUpdate(sql)`
+7. 处理结果：`System.out.println(count)`
+8. 释放资源：`stmt.close();conn.close();`
+
+### 各个对象
+- `DriverManager`：驱动管理对象，功能有
+  1. `static void registerDriver(Driver diver)`：注册驱动，而`Class.forName('com.mysql.jdbc.Driver')`中有静态代码块会自动执行注册操作，但其实也可以不进行注册，在`jar`包中的`META-INF`的`services`中的`java.sql.Driver`中就有启动语句
+  2. `static Connection getConnection(String url, String user, String password)`，参数
+    - `url`：指定连接的路径，`jdbc:mysql://ip地址(域名):端口号/数据库名称`
+    - `user`：用户名
+    - `password`：密码
+- `Connection`：数据库连接对象，功能
+  1. 获取执行`sql`的对象
+    - `Statement createStatement()`
+    - `PreparedStatement prepareStatement(string sql)`
+  2. 管理事务
+    - `void setAutoCommit(boolean autoCommit)`：调用该方法设置参数为`false`，即开始事务
+    - `commit()`：提交事务
+    - `rollback()`：回滚事务
+- `Statement`：执行`sql`的对象
+- `ResultSet`：结果集对象
+- `PreparedStatement`：也是执行`sql`对象但是功能更加强大
