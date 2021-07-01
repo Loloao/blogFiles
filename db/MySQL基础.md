@@ -275,6 +275,20 @@ rollback;
     - `void setAutoCommit(boolean autoCommit)`：调用该方法设置参数为`false`，即开始事务
     - `commit()`：提交事务
     - `rollback()`：回滚事务
-- `Statement`：执行`sql`的对象
-- `ResultSet`：结果集对象
-- `PreparedStatement`：也是执行`sql`对象但是功能更加强大
+- `Statement`：执行`sql`的对象，用于执行静态`sql`并返回其生成的结果的对象
+  - `boolean execute(String sql)`：执行给定的`sql`语句，可能返回多个结果，`true`如果第一个结果是一个`ResultSet`对象；`false`如果是更新计数或没有结果
+  - `int executeUpdate(String sql)`：执行`DML(insert, update, delete)`语句、`DDL(create, alter, drop)`语句，返回值为影响的行数，可以通过影响的行数判断`DML`语句是否执行成功，返回值 > 0 的则执行成功，反之失败
+  - `ResultSet executeQuery(String sql)`：执行`DQL(select)`语句
+- `ResultSet`：结果集对象，用于封装查询结果，可以通过一个游标一个一个指向下一条数据，和构造器类似
+  - `next()`：游标向下移动一行，判断是否是最后一行，如果是返回`false`，不是则返回`true`
+  - `get<数据类型>(<列编号 | 列名>)`：获取数据，比如`int getInt()`
+  使用步骤
+  - 游标向下移动
+  - 判断是否有数据
+  - 获取数据
+  ```java
+  while(rs.next()) {
+    int id = rs.getInt(1);
+  }
+  ```
+- `PreparedStatement`：也是执行`sql`对象但是功能更加强大，执行动态`sql`
