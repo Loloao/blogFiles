@@ -275,7 +275,7 @@ rollback;
     - `void setAutoCommit(boolean autoCommit)`：调用该方法设置参数为`false`，即开始事务
     - `commit()`：提交事务
     - `rollback()`：回滚事务
-- `Statement`：执行`sql`的对象，用于执行静态`sql`并返回其生成的结果的对象
+- `Statement`：执行`sql`的对象，用于执行静态`sql`并返回其生成的结果的对象，易受到 sql 注入攻击
   - `boolean execute(String sql)`：执行给定的`sql`语句，可能返回多个结果，`true`如果第一个结果是一个`ResultSet`对象；`false`如果是更新计数或没有结果
   - `int executeUpdate(String sql)`：执行`DML(insert, update, delete)`语句、`DDL(create, alter, drop)`语句，返回值为影响的行数，可以通过影响的行数判断`DML`语句是否执行成功，返回值 > 0 的则执行成功，反之失败
   - `ResultSet executeQuery(String sql)`：执行`DQL(select)`语句
@@ -291,4 +291,12 @@ rollback;
     int id = rs.getInt(1);
   }
   ```
-- `PreparedStatement`：也是执行`sql`对象但是功能更加强大，执行动态`sql`
+- `PreparedStatement`：也是执行`sql`对象但是功能更加强大，执行预编译`sql`，可防止`sql`注入，同时效率更高。参数使用`?`作为占位符
+  - `PreparedStatement Connection.preparedStatement(String sql)`：`sql`语句使用`?`作为占位符，比如`select * from user where username = ? and password = ?`
+  - `set<类型>(<?的位置>, <?的值>)`：用于给占位符赋值
+
+### 事务
+事务为一个包含多个步骤的业务操作。如果这个业务操作被事务管理，则多个步骤要么同时成功，要么同时失败
+- `setAutoCommit(boolean autocommit)`：调用该方法设置参数为`false`，即开始事务，在执行`sql`之前开启
+- `commit()`：提交事务，当所有`sql`执行完后提交事务
+- `rollback()`：回滚事务，在`catch`中进行事务的回滚
