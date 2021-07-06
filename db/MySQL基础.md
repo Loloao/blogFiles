@@ -300,3 +300,52 @@ rollback;
 - `setAutoCommit(boolean autocommit)`：调用该方法设置参数为`false`，即开始事务，在执行`sql`之前开启
 - `commit()`：提交事务，当所有`sql`执行完后提交事务
 - `rollback()`：回滚事务，在`catch`中进行事务的回滚
+
+### 数据库连接池
+当用户连接数据库，使用完之后就断开连接会消耗资源，此时我们可以使用一个数据库连接池来存储连接对象，用户需要连接数据库时需要从连接池中获取连接对象，使用完之后将连接对象归还到连接池中，好处：
+1. 节约资源
+2. 用户访问高效
+`public DataSource extends CommonDataSource, Wrapper`：一个连接到这个`DataSource`对象所代表的物理数据源的工厂
+`DataSource`接口由驱动程序供应商实现，有三种类型的实现：
+1. 基本实现：生成标准的`Connection`对象：
+2. 连接池实现：生成将自动参与连接池的`Connection`对象，此实现与中间层连接池管理器配合使用
+3. 分布式事务实现：生成可用于分布式事务的`Connection`对象，并且几乎总是参与连接池。此实现与中间层事务管理器一起工作，并且几乎总是使用连接池管理器
+数据库厂商有两种技术来实现数据库池：
+1. `C3P0`
+  - 导入两个`jar`包，`c3p0`和`mchange-commons-java`，同时记得导入驱动`jar`包
+  - 定义配置文件`c3p0.properties`或`c3p0-config.xml`，直接放置在`src`目录下即可
+  - 创建核心对象，数据库连接对象`ComboPooledDataSource`
+  - 获取连接对象`getConnection()`
+2. `Druid`：新版，由阿里实现
+  - 导入`jar`包`druid`
+  - 定义配置文件`druid.properties`，为`properties`，可以叫任何名称放在任意目录下
+  - 获取数据库连接池对象，通过工厂来获取`DruidDataSourceFactory.createDataSource()`
+  - 获取连接对象`getConnection()`
+`DataSource`接口实现
+1. `getConnection()`：获取连接，不传参则为默认配置，第一个参数可指定名称配置
+2. `Connection.close()`：如果连接对象是从连接池中获取的，那么调用`close()`方法不会关闭连接，而是归还到连接池
+定义工具类
+1. 定义一个类`JDBCUtils`
+2. 提供静态代码块加载配置文件，初始化连接池对象
+3. 提供方法
+  1. 获取连接方法：通过数据库连接池获取连接，`public static Connection getConnection() { return ds.getConnection(); }`
+  2. 释放资源：`public static void close(Statement stmt, Connection conn)`
+  3. 获取连接池方法：`public static DataSource getDataSource()`
+
+### Spring JDBC
+`Spring`的`JDBC`简单封装，提供了一个`JDBCTemplate`对象简化`JDBC`的开发
+步骤
+1. 导入`jar`包
+2. 创建`JdbcTemplate`对象，依赖于数据源`DataSource`，`JdbcTemplate template = new JdbcTemplate(ds)`
+3. 调用`JdbcTemplate`的方法来完成操作
+  - `update()`：执行`DML`语句，增删改语句
+    ```java
+    JdbcTemplate template = new JdbcTemplate(JDBCUtils.getDataSource());
+    String sql = "update account set balance = 5000 where id = ?";
+    int count = template.update(sql, 3);
+    System.out.println(count);
+    ```
+  - `queryForMap()`：查询结果将结果集封装为`map`集合
+  - `queryForList()`：查询结果将结果集封装为`List`集合
+  - `query()`：查询结果将结果封装为`JavaBean`对象
+  - `queryForObject()`：查询结果，将结果封装为对象
