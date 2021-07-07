@@ -350,15 +350,3 @@ rollback;
   - `query()`：查询结果将结果封装为`JavaBean`对象，`List<Emp> list = template.query(sql, new BeanPropertyRowMapper<Emp>(Emp.class))`
   - `queryForObject()`：查询结果，将结果封装为对象，一般用于聚合函数的查询
 
-## XML
-概念：`Extensible Markup Language(可扩展标记语言)`，可扩展，标签都是自定义的，功能
-1. 配置文件
-2. 在网络中传输
-基本语法：
-1. `.xml`：后缀名
-2. `<?xml version='1.0' ?>`：第一行必须为版本设置
-3. `xml`中有且仅有一个根标签
-4. 属性值必须使用引号引起来
-5. 标签必须正确关闭
-6. 标签名称区分大小写
-
