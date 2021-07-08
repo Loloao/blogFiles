@@ -839,3 +839,68 @@ java 提供了一种对象序列化的机制。用一个字节序列可以表示
 4. 属性值必须使用引号引起来
 5. 标签必须正确关闭
 6. 标签名称区分大小写
+组成部分：
+1. 文档声明，属性列表：
+  - `version`：版本号，必须的属性
+  - `encoding`：编码方式。告知解析引擎当前文档使用的字符集，默认值：`ISO-8859-1`
+  - `standalone`：是否独立，值为`yes(不依赖其他文件)`或`no(依赖其他文件)`
+2. 指令：结合`css`来控制标签样式`<?xml-stylesheet type="text/css" href="a.css" ?>`
+3. 标签规则：
+  - 名称可以包含字母、数字以及其他字符
+  - 名称不能以数字或标点符号开始
+  - 名称不能以字母`xml | XML`开始
+  - 名称不能包含空格
+4. 属性：`id`属性值唯一
+5. 文本：
+  - `CDATA区`：文本会被原样展示`<![CDATA[ <文本> ]]>`
+
+### XML 约束
+其实就是规定`xml`文档的书写规则，由软件提供，我们仅仅是阅读文档就行
+分类：
+1. `DTD`：简单，引入`dtd`文档到`xml`文档中，两种
+  - 内部`dtd`：将约束规则定义在`xml`文档中
+  - 外部`dtd`：将约束规则定义在外部的`dtd`文件中，本地`<!DOCTYPE <根标签> SYSTEM "<dtd 文件位置>">`，网络`<!DOCTYPE <根标签> PUBLIC "<dtd文件名>" "<dtd文件位置URL>" >`
+2. `Schema`：复杂，其实就是一个`xml`文档，引入
+  - 填写`xml`文档的根元素
+  - 引入`xsi`前缀，`xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"`，约束文档标准
+  - 引入`xsd`文件命名空间，`xsi:schemaLocation="http://www.itcast.cn/xml student.xsd"`，引入的路径
+  - 为每一个`xsd`约束声明一个前缀，作为标识`xmlns:a="http://www.itcast.cn/xml"`，`:a`为给命名空间设置一个别名，如果只有一个引入，则可以不配置
+
+### XML 解析
+将文档中的数据读取到内存中，方式有
+1. `DOM`：将标记语言一次性加载进内存中，在内存中形成一棵`dom`树
+  - 优点：操作方便，可对文档进行`CRUD`的所有操作，在服务器中一般是这种
+  - 缺点：树形结构占内存
+2. `SAX`：逐行读取，基于事件驱动，读下一行时会将上一行释放，相当于在内存中只有一行，在移动端一般是这种
+  - 优点：不占内存，手机中一般是这个
+  - 缺点：只能读取，不能增删改
+常见的解析器
+- `JAXP`：官方提供，支持`dom`和`sax`，一般没人用
+- `DOM4J`：非常优秀的解析器
+- `PULL`：安卓内置解析器，`sax`方式的
+- `jsoup`：`html`解析器，也可用于解析`xml`，使用步骤
+  1. 导入`jar`包
+  2. 获取`Document`对象
+  3. 获取对应标签`Element`对象
+  4. 获取数据
+  常见对象
+  - `Jsoup`：工具类，可以解析`html`或`xml`文档，返回`Document`
+    - `parse`：解析`html`或`xml`文档，返回`Document`
+      - `parse(File in, String charsetName)`：解析`xml`或`html`问阿金
+      - `parse(String html)`：解析`xml`或`html`字符串
+      - `parse(URL url, int timeoutMillis)`：通过网络路径获取指定的`html`或`xml`的文档对象，第二个参数为超时时间
+  - `Document`：文档对象，代表内存中的`dom`树，主要用于获取`Element`对象
+  - `Elements`：元素`Element`对象的集合，可以当做`ArrayList<Element>`来使用
+  - `ELement`：元素对象，有以下功能
+    - 获取子元素对象
+    - `String attr(String key)`：获取属性值
+    - `String test()`：获取文本内容
+    - `String html()`：获取`innerHTML`
+  - `Node`：节点对象
+
+  快捷查询方式
+  - `selector`：选择器，返回`Elements`
+    - `select(String cssQuery)`：可以参考`Selector`类中定义的语法
+  - `xpath`：`XML`路径语言，是一种用来确定`XML`文档中某部分位置的语言，使用`jsoup`的`XPath`需要导入额外的`jar`包
+    - `JXDocument jxDocument = new JXDocument(document);`：根据`docuemnt`对象创建`JXDocument`对象
+    - `List<JXNode> jxNodes = jxDocument.selN("<xpath>")`：结合`xpath`语法查询
