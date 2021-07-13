@@ -904,3 +904,72 @@ java 提供了一种对象序列化的机制。用一个字节序列可以表示
   - `xpath`：`XML`路径语言，是一种用来确定`XML`文档中某部分位置的语言，使用`jsoup`的`XPath`需要导入额外的`jar`包
     - `JXDocument jxDocument = new JXDocument(document);`：根据`docuemnt`对象创建`JXDocument`对象
     - `List<JXNode> jxNodes = jxDocument.selN("<xpath>")`：结合`xpath`语法查询
+
+## tomcat
+部署项目方式
+1. 直接将项目放到`webapps`目录下即可，一般会打包成一个`war`包，再将`war`包放置到`webapps`目录下，会自动进行解压和删除
+2. 进入`conf`目录下，打开`server.xml`，在`Host`标签下增加`<Context docBase="<资源目录>" path="<访问目录>" />`，但注意这是配置整个`tomcat`
+3. 进入`conf/Catalina/localhost`目录下创建一个`xml`文件，增加`<Context docBase="<资源目录>" />`，访问路径就是`xml`文件名称
+静态项目和动态项目
+目录结构：
+- java 动态项目
+  - 项目根目目录
+    - `WEB-INF`目录
+      - `web.xml`：web项目的和兴配置文件
+      - `classes`：放置字节码文件的目录
+      - `lib`：防止以来的`jar`包
+
+## Servlet
+`server applet`，相当于运行在服务器端的小程序
+有些 java 类作为动态资源需要依赖服务器才能运行，即由`tomcat`执行，这些类需要遵守一定的规则(接口)，才能被`tomcat`识别
+所以`Servlet`就是一个接口，定义了 java 类被浏览器访问到`tomcat`的规则
+1. 创建`JavaEE`项目
+2. 定义一个类，实现`Servlet`接口
+3. 实现接口中的抽象方法
+4. 配置`Servlet`
+  ```xml
+  <!-- 在 web.xml 中配置 Servlet -->
+  <servlet>
+    <servlet-name>demo1</servlet-name>
+    <!-- servlet-name 对应的类，必须是全类名 -->
+    <servlet-class>cn.itcast.web.servlet.ServletDemo1</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>demo1</servlet-name>
+    <!-- 哪个路径访问到这个类 -->
+    <url-pattern>/demo1</servlet-class>
+  </servlet>
+  ```
+### 执行原理
+比如`url`为`http://localhost:8080/tomcat/demo1`，它会
+1. 通过`http://localhost:8080`找到主机
+2. 通过`tomcat`找到项目
+3. 之后找到`web.xml`配置
+  - 查看是否有对应的`<url-pattern>`标签体内容
+  - 如果有，找到对应的`<serlet-class>`全类名
+  - `tomcat`会将字节码文件加载进内存，并且创建其对象
+  - 调用其方法
+ 
+### 生命周期
+- `public void init(ServletConfig servletConfig)`：在`Servlet`被创建时执行，只会执行一次，
+  默认情况下，第一次被访问时`Servlet`被创建，可以通过`web.xml`配置`<load-on-startup>`
+  - 为负数时则在第一次被访问时创建
+  - 为`0`或正整数时在服务器启动时创建
+  `Servlet`的`init`方法，只执行一次，说明一个`Servlet`在内存中只存在一个对象，`Servlet`是单例的
+  - 多个用户同时访问时，可能存在线程安全问题，我们尽量不要在`Servlet`中定义成员变量，即使定义了成员变量，也不要对其修改值
+- `public void service(ServletRequest servletRequest, ServletResponse servletResponse)`：每次`Servlet`被访问时执行，执行多次
+- `public void destroy()`：在`Servel`正常关闭时执行，在销毁之前执行，一般用于释放资源
+
+### 注解配置
+`Servlet 3.0`支持注解配置，可以不需要`web.xml`了，步骤
+1. 创建`JavaEE`项目，选择`Servlet`版本`3.0`以上，可以不创建`web.xml`
+2. 定义一个类，实现`Servlet`接口
+3. 覆写方法
+4. 在类上使用`@WebServlet`注解，此时只需要关心访问路径的配置`@WebServlet(urlPatterns="/demo")`，但是可以通过`value`代替`urlPatterns`，同时`value`可以不写，直接`@WebServlet("/demo")`
+
+### IDEA 与 tomcat 相关配置
+1. `IDEA`会为每一个`tomcat`部署的项目单独建立一份配置文件，查看控制台的`log`：`Using CATALINA_BASE: "<文件路径"`
+2. 工作空间项目和`tomcat`部署的`web`项目存储的位置不同。
+  - `tomcat`真正访问的是**tomcat部署的web项目**，**tomcat部署的web项目**对应着**工作空间项目**的web目录下的所有资源
+  - `WEB-INF`目录下的资源不能被浏览器直接访问，不要把静态资源放置在此目录下
+3. `Tomcat`的断点调试需要打开那个小虫子`debug`标签启动服务器并进行部署
