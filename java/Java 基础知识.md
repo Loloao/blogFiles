@@ -973,3 +973,58 @@ java 提供了一种对象序列化的机制。用一个字节序列可以表示
   - `tomcat`真正访问的是**tomcat部署的web项目**，**tomcat部署的web项目**对应着**工作空间项目**的web目录下的所有资源
   - `WEB-INF`目录下的资源不能被浏览器直接访问，不要把静态资源放置在此目录下
 3. `Tomcat`的断点调试需要打开那个小虫子`debug`标签启动服务器并进行部署
+
+### 体系结构
+- `GenericServlet`：抽象类继承并实现了`Servlet`，将`Servlet`除了`server`的方法定义为空
+- `HttpServlet`：抽象类继承了`GenericServlet`，对`http`协议的封装
+  1. 定义类继承`HttpServlet`
+  2. 覆写`doGet`或是`doPost`，在使用这两个方法之前会判断是那个方法进行的请求
+相关配置
+- `urlparttern`：配置访问路径，可以通过`@webServlet({"/d4", "/dd4"})`来配置多个访问路径来进行访问
+  - `/parent/de4`：可以有多层路径，也可以使用通配符
+  - `*.do`：可以使用通配符，但是访问优先级低
+
+### Request
+原理
+1. `tomcat`服务器会根据请求`url`中的资源路径，创建对应的`ServletDemo1`的对象
+2. `tomcat`服务器，会创建`request`和`response`对象，`request`对象中封装请求消息
+3. `tomcat`将`request`和`response`两个对象传递给`service`方法，并且调用`service`方法
+4. 可以通过`request`获取请求消息数据，通过`response`对象设置响应消息数据
+5. 服务器在给浏览器做出响应之前，会从`response`对象中拿程序员设置的响应消息数据
+继承体系结构
+`ServletRequest`接口继承`HttpServletRequest`接口，而`tomcat`通过`org.apache.catalina.connector.RequestFacade`类实现`HttpServletRequest`接口并传递给`servlet`的`serve`方法
+功能
+1. 获取请求消息数据
+  - 请求行数据，比如请求行为`GET /day14/demo1?name=zhangsan HTTP/1.1`
+    - `String geMethod()`：获取请求方式`GET`
+    - `String getContextPath()`：获取虚拟目录`/day14`
+    - `String getServletPath()`：获取`servlet`路径`/demo1`
+    - `String getQueryString()`：获取请求参数`name=zhangsan`
+    - `String getRequestURI()`：获取请求`URI``/day14/demo1`
+    - `StringBuffer getRequestURL()`：获取`url``http://localhost/day14/demo1`
+    - `String getProtocol()`：获取协议及版本`HTTP/1.1`
+    - `String getRemoteAddr()`：获取客户机IP地址
+  - 请求头数据
+    - `String getHeader(String name)`：通过请求头的名称获取请求头的值
+    - `Enumeration<String> getHeaderNames()`：获取所有请求头名称，其实就是一个迭代器
+  - 请求体数据，只有`post`请求才有请求体，在请求体中封装了`post`请求的请求参数，步骤：
+    1. 获取流对象
+      - `BufferedReader getReader()`：获取字符输入流，只能操作字符数据
+      - `ServletInputStream getInputStream()`：获取字节输入刘，可以操作所有类型数据，可以用于文件上传
+    2. 再从流对象中获取数据
+2. 其他功能
+  - 获取请求参数通用方式，不管`GET`或是`POST`
+    - `String getParameter(String name)`：根据参数名获取参数值
+    - `String[] getParameterValues(String name)`：根据参数名获取参数值的数组
+    - `Enumeration<String> getParameterNames()`：获取所有请求的参数名称
+    - `Map<String, String[]> getParameterMap()`：获取所有参数的`map`集合
+    当值为中文时，获取值时会为乱码，`GET`方法获取时`tomcat8`已经解决，当为`post`时需要在获取参数前设置`request.setCharacterEncoding("utf-8")`
+  - 请求转发：服务器内部资源跳转的方式，步骤
+    1. `getRequestDispatcher(String path)`：通过`request`对象获取请求转发器对象`RequestDispatcher`
+    2. 使用`RequestDispatcher`对象来进行转发：`forward(ServletRequest request, ServletResponse response)`
+    浏览器地址栏路径不发生变化，只能转发到当前服务器的内部资源中，转发是一次请求
+  - 共享数据：域对象表示一个有作用范围的对象，可以在范围内共享数据。`request`域代表一次请求的范围，一般用于请求转发对多个资源中共享数据，在转发前进行`setAttribute`，在其他`servlet`使用`getAttribute`获取值
+    - `setAttribute(String name, Object obj)`：存储数据到`request`域中
+    - `getAttribute(String name)`：通过键获取值
+    - `removeAttribute(String name)`：通过键移除值
+  - 获取`ServletContext`：返回一个`ServletContext`对象
